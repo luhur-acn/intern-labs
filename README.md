@@ -1,19 +1,12 @@
-# ☁️ Cloud Engineer Intern Training (AWS + Terraform)
-
-Welcome to the 2-week intensive training program. This repository is your central hub for both theory and practice. You will transition from manual AWS console operations to fully automated Infrastructure as Code (IaC) using Terraform and Terragrunt.
-
----
-
-##  Table of Contents
+## Table of Contents
 1. [Module 0: Cloud Computing Fundamentals](#module-0-cloud-computing-fundamentals)
-2. [Module 1: AWS Introduction & IAM](#module-1-aws-introduction--iam)
-3. [Module 2: Virtual Private Cloud (VPC)](#module-2-virtual-private-cloud-vpc)
-4. [Module 3: Compute & Storage](#module-3-compute--storage)
-5. [Module 4: High Availability & Scaling](#module-4-high-availability--scaling)
-6. [Module 5: Security & DNS](#module-5-security--dns)
-7. [Module 6: Infrastructure as Code (Terraform & Terragrunt)](#module-6-infrastructure-as-code-terraform--terragrunt)
-8. [Mentor Guides](#-mentor-guides)
-9. [Cost Management](#-cost-management)
+2. [Module 1: IAM & AWS CLI Basics](#module-1-aws-introduction--iam)
+3. [Module 2: VPC & Networking Basics](#module-2-virtual-private-cloud-vpc)
+4. [Module 3: EC2 & S3 Storage](#module-3-compute--storage)
+5. [Module 4: Load Balancers & Scaling](#module-4-high-availability--scaling)
+6. [Module 5: Secure Networking (NACLs/SGs)](#module-5-security--dns)
+7. [Module 6: AWS SDK for Python (Boto3)](#module-6-aws-sdk-for-python-boto3)
+8. [Module 7: Infrastructure as Code (Terraform & Terragrunt)](#module-7-infrastructure-as-code-terraform--terragrunt)
 
 ---
 
@@ -42,7 +35,7 @@ Welcome to the 2-week intensive training program. This repository is your centra
     - [AWS Concepts (DataCamp)](https://www.datacamp.com/courses/aws-concepts)
     - [AWS Cloud Technology and Services (DataCamp)](https://www.datacamp.com/courses/aws-cloud-technology-and-services)
     - [Learning AWS from Scratch in 2025 (Video)](https://www.youtube.com/watch?v=0WVXTRMKXtE)
-- **Related Lab**: [Lab 1: Cloud Concepts & CLI](labs/01-IAM_CLI.md)
+- **Related Lab**: [Lab 1: IAM & AWS CLI Basics](labs/01-IAM_CLI.md)
 
 ---
 
@@ -57,7 +50,7 @@ Welcome to the 2-week intensive training program. This repository is your centra
     - [Networking Core](https://skillbuilder.aws/learning-plan/KG2Z8NEHYV/networking-core--knowledge-badge-readiness-path-includes-labs/ZDTDSRZ9NE)
     - [How IP Addressing Works in AWS (Video)](https://www.youtube.com/watch?v=kRDtwr1dPpw)
     - [Internet Gateway VS NAT Gateway (Article)](https://aws.plainenglish.io/internet-gateway-vs-nat-gateway-a82c79958027)
-- **Related Lab**: [Lab 2: Virtual Networking (VPC)](labs/02-VPC_Networking.md)
+- **Related Lab**: [Lab 2: VPC & Networking Basics](labs/02-VPC_Networking.md)
 
 ---
 
@@ -68,7 +61,7 @@ Welcome to the 2-week intensive training program. This repository is your centra
 - **Resources**:
     - [Amazon EC2 Basics Tutorial (Video)](https://www.youtube.com/watch?v=hAk-7ImN6iM)
     - [Amazon S3 Basics Tutorial (Video)](https://www.youtube.com/watch?v=mDRoyPFJvlU)
-- **Related Lab**: [Lab 3: Compute & Storage](labs/03-EC2_S3.md)
+- **Related Lab**: [Lab 3: EC2 & S3 Storage](labs/03-EC2_S3.md)
 
 ---
 
@@ -79,7 +72,7 @@ Welcome to the 2-week intensive training program. This repository is your centra
 - **Resources**:
     - [Create an Application Load Balancer (Video)](https://www.youtube.com/watch?v=ZGGpEwThhrM)
     - [Route Traffic using Load Balancer Listener Rules (Video)](https://www.youtube.com/watch?v=0XMsnAgHXoo)
-- **Related Lab**: [Lab 4: High Availability (ALB/ASG)](labs/04-ALB_ASG_Manual.md)
+- **Related Lab**: [Lab 4: Load Balancers & Scaling](labs/04-ALB_ASG_Manual.md)
 
 ---
 
@@ -93,11 +86,29 @@ Welcome to the 2-week intensive training program. This repository is your centra
     - [What Are NACLs in AWS? (Video)](https://www.youtube.com/watch?v=t4ZUhxBmVJM)
     - [AWS Security Groups Simply Explained (Video)](https://www.youtube.com/watch?v=uYDT2SsHImQ)
     - [Security Groups vs. NACLs: What’s the Difference? (Video)](https://www.youtube.com/watch?v=JWoNu2Mtpdg)
-- **Related Lab**: [Lab 5: Advanced Networking & Security](labs/05-Advanced_EC2_VPC.md)
+- **Related Lab**: [Lab 5: Secure Networking (NACLs/SGs)](labs/05-Advanced_EC2_VPC.md)
 
 ---
 
-## Module 6: Infrastructure as Code (Terraform & Terragrunt)
+## Module 6: AWS SDK for Python (Boto3)
+*Automating AWS with Python code.*
+
+- **Objectives**: Setup Boto3, understand the difference between Resource and Client, and automate infrastructure tasks.
+- **Resources**:
+    - [Boto3 Documentation (Official Docs)](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
+    - [AWS SDK for Python (Boto3) Tutorial for Beginners (Video)](https://www.youtube.com/watch?v=3SGGitvXz4Y)
+    - [Intro to Boto3 - Python SDK for AWS (Video)](https://www.youtube.com/watch?v=tDchQ0nv7Q4)
+    - [Python Boto3 Tutorial: Getting Started (Video)](https://www.youtube.com/watch?v=kG-fLp9BTRo)
+    - [Paginators and Waiters in Boto3 (Video)](https://www.youtube.com/watch?v=_XUwqWjey3I)
+    - [Boto3: AWS SDK for Python (Medium Article)](https://medium.com/featurepreneur/boto3-aws-sdk-for-python-e7391b9901c5)
+    - [Automating AWS with Python and Boto3 (Course)](https://www.freecodecamp.org/news/automating-aws-with-python-and-boto3/)
+- **Related Labs**:
+    - [Lab 6: Python for AWS (Boto3)](labs/06-AWS_SDK_Boto3.md)
+    - [Lab 7: Automating AWS with Boto3](labs/07-Automation_Boto3.md)
+
+---
+
+## Module 7: Infrastructure as Code (Terraform & Terragrunt)
 *Automating the entire stack professionally.*
 
 - **Objectives**: Master Terraform HCL, state management, and the Terragrunt DRY wrapper.
@@ -107,18 +118,10 @@ Welcome to the 2-week intensive training program. This repository is your centra
     - [Why Terragrunt? (Article)](https://blog.gruntwork.io/terragrunt-vs-terraform-why-use-terragrunt-e4483c66288c)
     - [Terragrunt Quick Start Guide (Docs)](https://terragrunt.gruntwork.io/docs/getting-started/quick-start/)
 - **Related Labs**:
-    - [Lab 6: Intro to Terraform](labs/06-Intro_Terraform.md)
-    - [Lab 7: Terraform Modules & Logic](labs/07-Terraform_Modules.md)
-    - [Lab 8: Remote State & Data](labs/08-Remote_State.md)
-    - [Lab 9: Intro to Terragrunt](labs/09-Intro_Terragrunt.md)
-    - [Lab 10: Advanced Terragrunt](labs/10-Advanced_Terragrunt.md)
+    - [Lab 8: Terraform Fundamentals](labs/08-Intro_Terraform.md)
+    - [Lab 9: Reusable Terraform Modules](labs/09-Terraform_Modules.md)
+    - [Lab 10: Terraform State & Import](labs/10-Remote_State.md)
+    - [Lab 11: Terragrunt Basics](labs/11-Intro_Terragrunt.md)
+    - [Lab 12: Complex Terragrunt Stacks](labs/12-Advanced_Terragrunt.md)
+    - [Lab 13: Terragrunt Import](labs/13-Terragrunt_Import.md)
 
----
-
-## 👨‍🏫 Mentor Guides
-Answer keys and mentor-specific instructions can be found in `guides/mentor/`.
-
----
-
-## 💰 Cost Management
-**IMPORTANT**: In the Pluralsight Sandbox, resources are automatically deleted after 4 hours. Special care should be taken with NAT Gateways as they incur hourly costs.
