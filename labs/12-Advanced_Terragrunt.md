@@ -251,10 +251,13 @@ Terragrunt allows you to deploy specific environments or everything at once.
 
 ---
 
-## 🔥 BONUS CHALLENGE: The Security Hardening
-1.  Go back to your `vpc` configuration.
-2.  Add a custom NACL rule that blocks all traffic except Port 80 and 443 for your public subnets.
-3.  **Goal**: Apply the changes and verify that you can still reach the ALB, but other traffic is blocked.
+## 🧠 Lab Tasks: The Multi-Stage Orchestrator
+**Goal**: Manage complex, cross-component dependencies.
+
+1.  **Environment Toggling**: Setup `dev/` and `prod/` folders. Use an `env.hcl` file in each folder to automatically set the `instance_type` (e.g., `t3.micro` for dev, `t3.small` for prod).
+2.  **Strict Dependencies**: Link your modules using `dependency` blocks: `VPC -> SG -> EC2`. Ensure the EC2 module waits for the Security Group to be created first.
+3.  **The Master Command**: Navigate to the `dev/` root and run `terragrunt run-all apply`. 
+4.  **Verification**: Provide the final "Apply complete!" summary logs showing that all 3 modules were deployed in the correct order.
 
 ---
 

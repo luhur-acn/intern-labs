@@ -98,11 +98,13 @@ Route tables tell packets where to go.
 
 ---
 
-## 🔥 BONUS CHALLENGE: The Routing Audit
-**Scenario**: Your private instance can't download `httpd`.
-1.  Check the **Private Route Table**. Does it have a route to `0.0.0.0/0`?
-2.  Check the **Public Route Table**. Does the NAT Gateway's host subnet have a route to the IGW?
-3.  **Goal**: Explain why the private instance needs *both* route tables to be configured correctly for internet access to work.
+## 🧠 Lab Tasks: The Traffic Controller
+**Goal**: Isolate resources and bypass NAT via VPC Endpoints.
+
+1.  **Introduce Isolation**: Navigate to the **Private Route Table** and remove the `0.0.0.0/0` (NAT Gateway) route.
+2.  **Verify Blackout**: From your private instance, verify that `ping 8.8.8.8` and `aws s3 ls` both fail/timeout.
+3.  **Restore Access (Private Path)**: Provision an **S3 Gateway Endpoint** for your VPC and associate it with the `Private-RT`.
+4.  **Verification**: Run `aws s3 ls` again. Explain why this works while `ping 8.8.8.8` still fails.
 
 ---
 

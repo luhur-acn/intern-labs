@@ -117,10 +117,13 @@ for sg in sgs:
 
 ---
 
-## 🔥 BONUS CHALLENGE: The Snapshot Assistant
-**Scenario**: You want to backup all volumes attached to your "Dev" instances before stopping them.
-1.  Modify `stop_dev_instances.py` to iterate through the volumes of each instance and create a snapshot.
-2.  **Hint**: `instance.volumes.all()` returns a collection of volumes.
+## 🧠 Lab Tasks: The Infrastructure Janitor
+**Goal**: Create and then programmatically remediate a security risk.
+
+1.  **Create the Risk**: Write a Boto3 script that creates a new Security Group named `Legacy-SG` with Port 22 open to `0.0.0.0/0` (The World).
+2.  **The Auditor**: Add a function that searches for any Security Group with an "All Open" SSH rule and tags it `Status: Non-Compliant`.
+3.  **The Remediation**: Add a function to the script that automatically deletes the world-open rule and replaces it with a rule allowing only your current public IP address.
+4.  **Verification**: List the Security Group rules before and after the script runs to prove the remediation was successful.
 
 ---
 

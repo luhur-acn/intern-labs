@@ -118,10 +118,13 @@ Run it: `python3 manage_s3.py`
 
 ---
 
-## 🔥 BONUS CHALLENGE: The Object Tagger
-**Scenario**: You need to track which intern uploaded which file.
-1.  Modify `manage_s3.py` to add a tag `InternName: [YourName]` to the object when uploading.
-2.  **Hint**: Look up `ExtraArgs` in the `upload_file` documentation.
+## 🧠 Lab Tasks: The S3 Content Manager
+**Goal**: Programmatic bucket and object management.
+
+1.  **The Multi-Upload Script**: Write a Boto3 script that creates a bucket and uploads 3 different text files in a single run.
+2.  **Tagging Service**: Modify the script to add a tag `Project: Intern-Labs` to *only* one of the three files during upload.
+3.  **The Audit**: Add a function to the script that lists all objects in the bucket, their size in bytes, and prints the tags for the file you tagged in Step 2.
+4.  **Automatic Cleanup**: Add a `cleanup()` function to the script that deletes all objects and the bucket after a successful audit. Document why bucket deletion fails if it's not empty.
 
 ---
 

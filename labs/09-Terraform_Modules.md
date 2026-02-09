@@ -125,11 +125,13 @@ module "sg" {
 
 ---
 
-## 🔥 BONUS CHALLENGE: The Dynamic Subnetter
-**Scenario**: You need subnets in every AZ.
-1.  Use the `data "aws_availability_zones" "available" {}` data source.
-2.  Use `for_each` or `count` to create one subnet per available AZ automatically.
-3.  **Goal**: Prove that your code adapts if you change regions (e.g., from `us-east-1` to `us-west-2`).
+## 🧠 Lab Tasks: The Reusable Factory
+**Goal**: Build a dynamic, multi-AZ networking module.
+
+1.  **Dynamic Subnetting**: Refactor your module to use `data "aws_availability_zones" "available" {}`. Use a `for_each` loop to create one public subnet in every available AZ automatically.
+2.  **Safety First**: Add a `validation` block to your `vpc_cidr` variable that ensures the CIDR mask is at least `/24`. Test this by trying to deploy a `/16` and recording the error message.
+3.  **The Handshake**: Create an `output` in your networking module that returns a list of all Subnet IDs.
+4.  **Verification**: Reference the module outputs in your root `main.tf` to print the total count of subnets created. Document how this code behaves differently in `us-east-1` (6 AZs) vs `us-west-1` (3 AZs).
 
 ---
 

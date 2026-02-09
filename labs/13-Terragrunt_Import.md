@@ -111,11 +111,14 @@ How do you know Terragrunt is actually in control?
 
 ---
 
-## 🔥 BONUS CHALLENGE: The Move
-**Scenario**: You want to move your manual resources into a different environment folder (e.g., from `dev/` to `staging/`).
-1.  Copy the configuration to the new folder.
-2.  Import the resources again into the new state.
-3.  **Question**: What happens to the old state file?
+## 🧠 Lab Tasks: The Legacy Refactor
+**Goal**: Cleanly import and rename resources via state manipulation.
+
+1.  **Preparation**: Manually create an S3 bucket in the Console.
+2.  **The Import**: Use `terragrunt import` to bring the bucket under management in a `dev/storage` folder.
+3.  **The Rename**: Use `terragrunt state mv` to rename the resource within the state (e.g., from `aws_s3_bucket.manual` to `aws_s3_bucket.legacy_import`).
+4.  **Verification**: Update your code and run `terragrunt plan`. Provide the output showing "No changes" after the rename is complete.
+5.  **Emergency Recovery**: Purposefully kill a Terragrunt process to leave a "Stuck Lock". Use `terragrunt force-unlock` to recover the environment. Document the Lock ID you cleared.
 
 ---
 

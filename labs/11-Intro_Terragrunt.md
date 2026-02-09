@@ -117,11 +117,13 @@ terragrunt apply
 
 ---
 
-## 🔥 BONUS CHALLENGE: The Provider Injector
-**Scenario**: You want to ensure every module uses the same AWS Region and Tags.
-1.  Add a `generate "provider"` block to your root `root.hcl`.
-2.  Have it create a `providers.tf` file that sets the default region to `us-east-1` and adds a tag `ManagedBy = "Terragrunt"`.
-3.  **Goal**: Run `terragrunt plan` and verify that the provider is injected automatically.
+## 🧠 Lab Tasks: The DRY Reformer
+**Goal**: Consolidate provider and backend configuration.
+
+1.  **Global Provider**: Define a `root.hcl` file that uses `generate "provider"` to inject a standard AWS provider with default tags (e.g., `Owner = "Intern"`) into all child modules.
+2.  **Dynamic State**: Use `path_relative_to_include()` in your `remote_state` block to ensure that `dev/vpc` and `dev/s3` automatically get unique folders in your S3 bucket without hardcoding paths.
+3.  **The Overview**: Execute `terragrunt run-all plan` from the `dev/` root directory.
+4.  **Verification**: Provide the plan output showing that all resources are being created in their correct AZs and with the global "Intern" tag applied.
 
 ---
 

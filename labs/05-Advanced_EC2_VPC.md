@@ -107,10 +107,13 @@ How does a private instance reach external services?
 
 ---
 
-## 🔥 BONUS CHALLENGE: The Security Audit
-**Scenario**: Your company has 100TB of S3 traffic.
-1.  Explain why a **Gateway Endpoint** is better than a **NAT Gateway** for this specific use case. (Hint: Look at the Data Processing costs of NAT!).
-2.  **Goal**: Explain why you would still keep a NAT Gateway even if you have VPC Endpoints for everything else.
+## 🧠 Lab Tasks: The Zero-Egress Fortress
+**Goal**: Securely manage instances without any internet path.
+
+1.  **Cut the Cord**: Remove the `0.0.0.0/0` route from your `Private-RT`. Verify that `ping google.com` and `aws s3 ls` fail from your private instance.
+2.  **SSM over Private Link**: Setup Interface VPC Endpoints for `ssm` and `ssmmessages` in the `Private-Subnet`.
+3.  **Restore Management**: Verify that you can still connect to the instance via **SSM Session Manager** even though it has zero internet access.
+4.  **S3 Backbone Access**: Re-attach the S3 Gateway Endpoint. Prove that `aws s3 ls` works while `ping google.com` still fails. Document why this is more secure.
 
 ---
 
