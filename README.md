@@ -15,8 +15,6 @@
 
 - **Concepts**: What is Cloud Computing? Benefits of Cloud (Agility, Cost, Elasticity).
 - **Resources**:
-    - [Cloud Computing Fundamentals (Educative.io)](https://www.educative.io/courses/cloud-computing-fundamentals)
-    - [Understanding Cloud Computing (DataCamp)](https://www.datacamp.com/courses/understanding-cloud-computing)
     - [Roadmap.sh AWS](https://roadmap.sh/aws)
     - [Cloud Computing Explained: The Most Important Concepts To Know](https://www.youtube.com/watch?v=ZaA0kNm18pE)
     - [AWS Educate](https://aws.amazon.com/education/awseducate/)
@@ -32,8 +30,6 @@
     - [Getting Started with AWS Cloud Essentials (AWS Skill Builder)](https://skillbuilder.aws/learn/Y738EQQD49/getting-started-with-aws-cloud-essentials/YEWD5RAWZJ)
     - [AWS Cloud Practitioner Essentials](https://skillbuilder.aws/learn/94T2BEN85A/aws-cloud-practitioner-essentials/8D79F3AVR7)
     - [AWS Cloud Quest: Cloud Practitioner](https://skillbuilder.aws/learn/FU5WCYVGKY/aws-cloud-quest-cloud-practitioner/JF9TKU68GT)
-    - [AWS Concepts (DataCamp)](https://www.datacamp.com/courses/aws-concepts)
-    - [AWS Cloud Technology and Services (DataCamp)](https://www.datacamp.com/courses/aws-cloud-technology-and-services)
     - [Learning AWS from Scratch in 2025 (Video)](https://www.youtube.com/watch?v=0WVXTRMKXtE)
 - **Related Lab**: [Lab 1: IAM & AWS CLI Basics](labs/01-IAM_CLI.md)
 
