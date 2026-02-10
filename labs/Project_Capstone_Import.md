@@ -16,7 +16,7 @@ graph TD
     classDef env fill:none,stroke:#545b64,stroke-width:2px,stroke-dasharray: 10 5;
     classDef external fill:none,stroke:#545b64,stroke-width:1px;
 
-    subgraph "AWS Account"
+    subgraph AWS_Acc ["AWS Account"]
         direction TB
 
         subgraph DevEnv ["DEV ENVIRONMENT"]
@@ -58,6 +58,7 @@ graph TD
     class D_EC2,P_EC2 compute;
     class D_S3,P_S3 s3;
     class D_EIP,D_NLB,D_ALB,P_EIP,P_NLB,P_ALB external;
+    class AWS_Acc env;
 ```
 
 ---

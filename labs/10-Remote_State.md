@@ -21,6 +21,8 @@ graph TD
     classDef terraform fill:none,stroke:#c85581,stroke-width:2px;
     classDef state fill:none,stroke:#3b48cc,stroke-width:2px;
     classDef db fill:none,stroke:#dd344c,stroke-width:2px;
+    classDef container fill:none,stroke:#545b64,stroke-width:1px,stroke-dasharray: 5 5;
+    classDef external fill:none,stroke:#545b64,stroke-width:1px;
 
     subgraph Workspace ["Local Workspace"]
         TF[Terraform Code]
@@ -41,6 +43,7 @@ graph TD
     class S3 state;
     class DB db;
     class Res external;
+    class Workspace,AWS container;
 ```
 
 ---
