@@ -96,11 +96,13 @@ Instead of a manual launch, we create a template (blueprint).
 
 ---
 
-## 🔥 BONUS CHALLENGE: The Rolling Update
-**Scenario**: You need to update the website text without any downtime.
-1.  Create **Version 2** of the Launch Template with new UserData text.
-2.  Run an **Instance Refresh** on the ASG.
-3.  **Observation**: Watch how ASG stops one "old" instance and starts one "new" instance, ensuring at least one server is always active.
+## 🧠 Lab Tasks: The Chaos & Scale Master
+**Goal**: Validate ASG self-healing and rolling updates.
+
+1.  **Survive a Failure**: Manually terminate one of your instances. Go to **ASG > Activity History** and record the timestamp of the termination and the start of the replacement launch.
+2.  **The Rolling Update**: Create a **Version 2** of your Launch Template with different text in the UserData (e.g., "Version 2.0").
+3.  **Execute Refresh**: Start an **Instance Refresh** on your ASG with a minimum healthy percentage of 50%.
+4.  **Verification**: Use a `curl` loop or rapid browser refreshes to the ALB DNS name. Provide a log showing the moment the response changes from "Site is UP!" to your "Version 2.0" message.
 
 ---
 

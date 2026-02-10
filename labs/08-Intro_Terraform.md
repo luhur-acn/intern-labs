@@ -94,11 +94,13 @@ resource "aws_vpc" "main" {
 
 ---
 
-## 🔥 BONUS CHALLENGE: The Ghost Resource (Import)
-**Scenario**: You have a manual S3 bucket from Day 1. You want Terraform to manage it.
-1.  Add a blank resource: `resource "aws_s3_bucket" "manual_bucket" {}` to your code.
-2.  Run: `terraform import aws_s3_bucket.manual_bucket YOUR_BUCKET_NAME`.
-3.  **Goal**: Run `terraform plan`. Terraform will complain that your code is empty while the real bucket has settings. Update your code until `plan` says "No changes."
+## 🧠 Lab Tasks: The Drift Detective
+**Goal**: Manage state and correct manual "out-of-band" changes.
+
+1.  **Preparation**: Deploy an S3 bucket via Terraform with a tag `Environment = "Dev"`. 
+2.  **The Sabotage**: Go to the **S3 Console** and manually change the tag to `Environment = "Prod"`.
+3.  **The Detection**: Run `terraform plan`. Observe how Terraform identifies that the real-world resource has "drifted" from your code.
+4.  **The Fix**: Run `terraform apply`. Verify that the tag is back to `"Dev"` in the console and document why this happens.
 
 ---
 

@@ -99,12 +99,12 @@ S3 is a global namespace. Bucket names must be unique across the entire world!
 
 ---
 
-## 🔥 BONUS CHALLENGE: The Identity Detective
-**Scenario**: In the Pluralsight sandbox, you often have two identities. One for the Web Console and one for the CLI.
+## 🧠 Lab Tasks: The Profile Detective
+**Goal**: Manage multiple identities and audit permissions boundaries.
 
-1.  Run `aws sts get-caller-identity` in the CLI.
-2.  In the AWS Console web page, look at the top right corner. Does it say the same name?
-3.  **Discussion**: Why might a company give a developer a Role for the Console but a User (with Access Keys) for the CLI?
+1.  **Configure a second profile**: Run `aws configure --profile investigator`. Enter dummy values for keys (e.g., `AKIA123...`).
+2.  **Verify failure**: Run `aws sts get-caller-identity --profile investigator`. Explain why it fails and what "InvalidClientTokenId" means.
+3.  **Identity Audit**: Using your **primary** profile, identify the name of the IAM Role or User you are currently using. Use `aws iam list-attached-user-policies` or `list-attached-role-policies` to find which policy allows S3 access.
 
 ---
 

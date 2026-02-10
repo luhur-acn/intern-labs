@@ -40,10 +40,14 @@
 
 - **Objectives**: Understand subnets, route tables, IGWs, and NAT Gateways.
 - **Resources**:
-    - [AWS Networking Basics For Programmers (Video)](https://www.youtube.com/watch?v=2doSoMN2xvI)
     - [Amazon VPC Basics Tutorial (Video)](https://www.youtube.com/watch?v=7_NNlnH7sAg)
+    - [AWS Networking Basics](https://skillbuilder.aws/learn/S1VYRYHD8V/aws-networking-basics/SKP7248UVF?parentId=ZDTDSRZ9NE)
+    - [AWS Networking Basics For Programmers (Video)](https://www.youtube.com/watch?v=2doSoMN2xvI)
+    - [Subnets, Gateways, and Route Tables Explained](https://skillbuilder.aws/learn/D3C12EX9SU/subnets-gateways-and-route-tables-explained/FACFF89ATD?parentId=ZDTDSRZ9NE)
+    - [Configuring and Deploying VPCs with Multiple Subnets](https://skillbuilder.aws/learn/4HWA8PME5S/configuring-and-deploying-vpcs-with-multiple-subnets/BTRCDVX2RU?parentId=ZDTDSRZ9NE)
+    - [Introduction to Amazon Virtual Private Cloud (VPC)](https://skillbuilder.aws/learn/PH6Z6EVH8Z/introduction-to-amazon-virtual-private-cloud-vpc/PA8H7FUE15?parentId=ZDTDSRZ9NE)
+    - [AWS Network Connectivity Options](https://skillbuilder.aws/learn/WQJNBEZYDW/aws-network-connectivity-options/PZDF9Z7DN5?parentId=ZDTDSRZ9NE)
     - [AWS VPC Beginner to Pro (FreeCodeCamp)](https://www.youtube.com/watch?v=g2JOHLHh4rI)
-    - [Networking Core](https://skillbuilder.aws/learning-plan/KG2Z8NEHYV/networking-core--knowledge-badge-readiness-path-includes-labs/ZDTDSRZ9NE)
     - [How IP Addressing Works in AWS (Video)](https://www.youtube.com/watch?v=kRDtwr1dPpw)
     - [Internet Gateway VS NAT Gateway (Article)](https://aws.plainenglish.io/internet-gateway-vs-nat-gateway-a82c79958027)
 - **Related Lab**: [Lab 2: VPC & Networking Basics](labs/02-VPC_Networking.md)

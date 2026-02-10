@@ -111,11 +111,13 @@ Sometimes you want to manage manual resources without recreating them.
 
 ---
 
-## 🔥 BONUS CHALLENGE: Cross-Stack Data Sharing
-**Scenario**: Your networking team manages the VPC in one folder, and you manage the EC2 in another.
-1.  In the `networking` folder, export the `vpc_id` as an **output**.
-2.  In the `compute` folder, use the `terraform_remote_state` data source to "peek" into the networking folder's state in S3.
-3.  **Goal**: Successfully launch an EC2 instance in a VPC that was created by a completely separate Terraform workspace.
+## 🧠 Lab Tasks: The Collision Specialist
+**Goal**: Secure state and handle concurrent multi-user locks.
+
+1.  **State Migration**: Start with local state, then configure an S3/DynamoDB backend. Successfully run `terraform init` to migrate the state and verify the bucket contains the `.tfstate` file.
+2.  **Dual-Apply Conflict**: Open two terminal windows. Run `terraform apply` in both simultaneously. Provide the exact "Error acquiring the state lock" message from the second terminal.
+3.  **Cross-Stack Data**: Use the `terraform_remote_state` data source to allow a completely separate "App Stack" to read the `vpc_id` from your "Networking Stack".
+4.  **Verification**: Document what happens to the DynamoDB table during an active `apply` (look for the `LockID` item).
 
 ---
 
