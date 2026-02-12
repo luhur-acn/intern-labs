@@ -50,6 +50,7 @@
     - [AWS VPC Beginner to Pro (FreeCodeCamp)](https://www.youtube.com/watch?v=g2JOHLHh4rI)
     - [How IP Addressing Works in AWS (Video)](https://www.youtube.com/watch?v=kRDtwr1dPpw)
     - [Internet Gateway VS NAT Gateway (Article)](https://aws.plainenglish.io/internet-gateway-vs-nat-gateway-a82c79958027)
+    - [Keep Your Network Traffic in AWS with VPC Endpoints](https://www.youtube.com/watch?v=jo3X_aay4Vs)
 - **Related Lab**: [Lab 2: VPC & Networking Basics](labs/02-VPC_Networking.md)
 
 ---
