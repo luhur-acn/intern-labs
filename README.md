@@ -62,6 +62,9 @@
 - **Resources**:
     - [Amazon EC2 Basics Tutorial (Video)](https://www.youtube.com/watch?v=hAk-7ImN6iM)
     - [Amazon S3 Basics Tutorial (Video)](https://www.youtube.com/watch?v=mDRoyPFJvlU)
+    - [Create an Amazon EBS volume](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-creating-volume.html)
+    - [Attach an Amazon EBS volume to an Amazon EC2 instance](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-attaching-volume.html)
+    - [Make an Amazon EBS volume available for use](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-using-volumes.html)
 - **Related Lab**: [Lab 3: EC2 & S3 Storage](labs/03-EC2_S3.md)
 
 ---
