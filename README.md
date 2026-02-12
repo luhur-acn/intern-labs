@@ -6,7 +6,8 @@
 5. [Module 4: Load Balancers & Scaling](#module-4-high-availability--scaling)
 6. [Module 5: Secure Networking (NACLs/SGs)](#module-5-security--dns)
 7. [Module 6: AWS SDK for Python (Boto3)](#module-6-aws-sdk-for-python-boto3)
-8. [Module 7: Infrastructure as Code (Terraform & Terragrunt)](#module-7-infrastructure-as-code-terraform--terragrunt)
+8. [Module 7: Terraform Fundamentals](#module-7-terraform-fundamentals)
+9. [Module 8: Terragrunt & Advanced DRY](#module-8-terragrunt--advanced-dry)
 
 ---
 
@@ -112,19 +113,33 @@
 
 ---
 
-## Module 7: Infrastructure as Code (Terraform & Terragrunt)
-*Automating the entire stack professionally.*
+## Module 7: Terraform Fundamentals
+*Automating infrastructure with HashiCorp Terraform.*
 
-- **Objectives**: Master Terraform HCL, state management, and the Terragrunt DRY wrapper.
+- **Objectives**: Master Terraform HCL, providers, resources, and state management.
 - **Resources**:
+    - [What is Infrastructure as Code?](https://www.youtube.com/watch?v=zWw2wuiKd5o)
+    - [What is Infrastructure as Code (IaC)?](https://www.redhat.com/en/topics/automation/what-is-infrastructure-as-code-iac)
+    - [Terraform in 100 Seconds](https://www.youtube.com/watch?v=tomUWcQ0P3k)
     - [Terraform in 10 Minutes (Video)](https://www.youtube.com/watch?v=tomUWcQ0P3k)
     - [Terraform Crash Course (Video)](https://www.youtube.com/watch?v=HmxkYNv1ksg)
-    - [Why Terragrunt? (Article)](https://blog.gruntwork.io/terragrunt-vs-terraform-why-use-terragrunt-e4483c66288c)
-    - [Terragrunt Quick Start Guide (Docs)](https://terragrunt.gruntwork.io/docs/getting-started/quick-start/)
+    - [Intro to Terraform](https://developer.hashicorp.com/terraform/intro)
+    - [Install Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
+    - [Terraform Basics](https://notes.kodekloud.com/docs/Terraform-Basics-Training-Course/Introduction/Course-Introduction/page)
 - **Related Labs**:
     - [Lab 8: Terraform Fundamentals](labs/08-Intro_Terraform.md)
     - [Lab 9: Reusable Terraform Modules](labs/09-Terraform_Modules.md)
     - [Lab 10: Terraform State & Import](labs/10-Remote_State.md)
+
+---
+
+## Module 8: Terragrunt & Advanced DRY
+*Scaling IaC with the Terragrunt DRY wrapper.*
+
+- **Objectives**: Understand Terragrunt's DRY principle, remote state management, and multi-account orchestration.
+- **Resources**:
+    - [Terragrunt for Beginners](https://notes.kodekloud.com/docs/Terragrunt-for-Beginners/Introduction/Course-Introduction)
+- **Related Labs**:
     - [Lab 11: Terragrunt Basics](labs/11-Intro_Terragrunt.md)
     - [Lab 12: Complex Terragrunt Stacks](labs/12-Advanced_Terragrunt.md)
     - [Lab 13: Terragrunt Import](labs/13-Terragrunt_Import.md)
