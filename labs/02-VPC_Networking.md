@@ -100,6 +100,20 @@ Route tables tell packets where to go.
     - Create `Private-RT`. Associate with `Private-Subnet`.
     - **Edit Routes**: Add `0.0.0.0/0` -> Target: `NAT Gateway` -> `Intern-NAT`.
 
+### Step 6: Launch Test Instances
+To verify our networking, we need one instance in each subnet.
+
+1.  **Launch Public Instance**:
+    - **Name**: `VPC-Public-Test`.
+    - **Subnet**: `Public-Subnet`.
+    - **Auto-assign Public IP**: Enable.
+    - **Security Group**: Create `VPC-Test-SG`. Allow **SSH (22)** and **All ICMP - IPv4** from `0.0.0.0/0`.
+2.  **Launch Private Instance**:
+    - **Name**: `VPC-Private-Test`.
+    - **Subnet**: `Private-Subnet`.
+    - **Auto-assign Public IP**: Disable.
+    - **Security Group**: Select the existing `VPC-Test-SG`.
+
 ---
 
 ## ❓ Troubleshooting & Pitfalls
@@ -113,13 +127,16 @@ Route tables tell packets where to go.
 ## 🧠 Lab Tasks: The Traffic Controller
 **Goal**: Isolate resources and bypass NAT via VPC Endpoints.
 
-1.  **Introduce Isolation**: Navigate to the **Private Route Table** and remove the `0.0.0.0/0` (NAT Gateway) route.
-2.  **Verify Blackout**: From your private instance, verify that `ping 8.8.8.8` and `aws s3 ls` both fail/timeout.
-3.  **Restore Access (Private Path)**: Provision an **S3 Gateway Endpoint** for your VPC and associate it with the `Private-RT`.
-4.  **Verification**: Run `aws s3 ls` again. Explain why this works while `ping 8.8.8.8` still fails.
+1.  **Preparation**: Connect to the `VPC-Public-Test` instance via SSH, then SSH into the `VPC-Private-Test` instance using its private IP.
+2.  **Verify Outbound Access**: From the private instance, run `ping 8.8.8.8`. It should work thanks to the NAT Gateway!
+3.  **Introduce Isolation**: Navigate to the **Private Route Table** and remove the `0.0.0.0/0` (NAT Gateway) route.
+4.  **Verify Blackout**: From the private instance, verify that `ping 8.8.8.8` and `aws s3 ls` both fail/timeout.
+5.  **Restore Access (Private Path)**: Provision an **S3 Gateway Endpoint** for your VPC and associate it with the `Private-RT`.
+6.  **Verification**: Run `aws s3 ls` again. Explain why this works while `ping 8.8.8.8` still fails.
 
 ---
 
 ## 🧹 Cleanup
-1. Delete the NAT Gateway (and release the Elastic IP!).
-2. Delete the VPC (handling IGW, subnets, and RTs).
+1. Terminate the `VPC-Public-Test` and `VPC-Private-Test` instances.
+2. Delete the NAT Gateway (and release the Elastic IP!).
+3. Delete the VPC (handling IGW, subnets, and RTs).
