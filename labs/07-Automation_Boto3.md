@@ -4,7 +4,6 @@
 |------------|-----------|---------------|
 | Advanced   | 120 Mins  | Lab 06 Completion |
 
-> **🖥️ Sandbox Note**: This lab is designed to run entirely within a **Pluralsight AWS Sandbox**. No billing access, email subscriptions, or Lambda deployments are required. All scripts run locally from the sandbox Cloud Shell or an EC2 instance with an IAM role attached.
 
 ---
 
