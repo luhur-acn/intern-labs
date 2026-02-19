@@ -143,3 +143,15 @@
     - [Lab 12: Complex Terragrunt Stacks](labs/12-Advanced_Terragrunt.md)
     - [Lab 13: Terragrunt Import](labs/13-Terragrunt_Import.md)
 
+---
+
+## 🏆 Capstone Projects
+
+*End-to-end projects that combine skills from all modules.*
+
+| Capstone | Focus | Difficulty | Prerequisites |
+| :--- | :--- | :--- | :--- |
+| [Capstone: Architect the Cloud](labs/Project_Capstone_Architecture.md) | Design, build, and resilience-test a production HA architecture on AWS | Advanced | Labs 1–7 |
+| [Capstone: IaC Mastery](labs/Project_Capstone_IaC.md) | Author Terraform modules from scratch, wire with Terragrunt, master state management | Advanced | Labs 8–13 |
+| [Capstone: The Great Migration](labs/Project_Capstone_Import.md) | Discover legacy infrastructure via CLI/SDK and codify it into Terragrunt with `import` blocks | Advanced | Labs 1–13 |
+
