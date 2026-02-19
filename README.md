@@ -101,12 +101,11 @@
 - **Objectives**: Setup Boto3, understand the difference between Resource and Client, and automate infrastructure tasks.
 - **Resources**:
     - [Boto3 Documentation (Official Docs)](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
-    - [AWS SDK for Python (Boto3) Tutorial for Beginners (Video)](https://www.youtube.com/watch?v=3SGGitvXz4Y)
     - [Intro to Boto3 - Python SDK for AWS (Video)](https://www.youtube.com/watch?v=tDchQ0nv7Q4)
     - [Python Boto3 Tutorial: Getting Started (Video)](https://www.youtube.com/watch?v=kG-fLp9BTRo)
     - [Paginators and Waiters in Boto3 (Video)](https://www.youtube.com/watch?v=_XUwqWjey3I)
     - [Boto3: AWS SDK for Python (Medium Article)](https://medium.com/featurepreneur/boto3-aws-sdk-for-python-e7391b9901c5)
-    - [Automating AWS with Python and Boto3 (Course)](https://www.freecodecamp.org/news/automating-aws-with-python-and-boto3/)
+    - [How to use Python with the AWS Boto3 SDK - Hands-On Introduction)](https://www.youtube.com/watch?v=QSDIKakB8qs)
 - **Related Labs**:
     - [Lab 6: Python for AWS (Boto3)](labs/06-AWS_SDK_Boto3.md)
     - [Lab 7: Automating AWS with Boto3](labs/07-Automation_Boto3.md)
