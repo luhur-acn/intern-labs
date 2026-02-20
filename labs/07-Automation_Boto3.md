@@ -476,7 +476,6 @@ if __name__ == '__main__':
    - Lists all snapshots tagged `AutoBackup: true`.
    - Checks each snapshot's `State` (`pending` / `completed` / `error`).
    - Prints a summary table: `Snapshot ID | Volume ID | State | Start Time`.
-3. Add a **cleanup function** that deletes snapshots older than 1 day using the `StartTime` field.
 
 ---
 
