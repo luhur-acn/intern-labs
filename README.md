@@ -120,7 +120,6 @@
     - [What is Infrastructure as Code?](https://www.youtube.com/watch?v=zWw2wuiKd5o)
     - [What is Infrastructure as Code (IaC)?](https://www.redhat.com/en/topics/automation/what-is-infrastructure-as-code-iac)
     - [Terraform in 100 Seconds](https://www.youtube.com/watch?v=tomUWcQ0P3k)
-    - [Terraform in 10 Minutes (Video)](https://www.youtube.com/watch?v=tomUWcQ0P3k)
     - [Terraform Crash Course (Video)](https://www.youtube.com/watch?v=HmxkYNv1ksg)
     - [Intro to Terraform](https://developer.hashicorp.com/terraform/intro)
     - [Install Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
