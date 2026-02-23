@@ -123,6 +123,7 @@
     - [Terraform Crash Course (Video)](https://www.youtube.com/watch?v=HmxkYNv1ksg)
     - [Intro to Terraform](https://developer.hashicorp.com/terraform/intro)
     - [Install Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
+    - [Using Terraform with AWS](https://www.youtube.com/watch?v=rsct-JvJmKs)
     - [Terraform Basics](https://notes.kodekloud.com/docs/Terraform-Basics-Training-Course/Introduction/Course-Introduction/page)
 - **Related Labs**:
     - [Lab 8: Terraform Fundamentals](labs/08-Intro_Terraform.md)
