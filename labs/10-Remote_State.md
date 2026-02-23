@@ -24,26 +24,35 @@ graph TD
     classDef container fill:none,stroke:#545b64,stroke-width:1px,stroke-dasharray: 5 5;
     classDef external fill:none,stroke:#545b64,stroke-width:1px;
 
-    subgraph Workspace ["Local Workspace"]
-        TF[Terraform Code]
+    subgraph Workspace ["Networking Stack"]
+        TF[Network TF Code]
     end
     
+    subgraph AppWorkspace ["App Stack"]
+        AppTF[App TF Code]
+    end
+
     subgraph AWS ["AWS Infrastructure"]
-        S3[(S3: Remote State)]
-        DB[(DynamoDB: State Lock)]
-        Res[AWS Resources]
+        S3[("S3: Remote State")]
+        DB[("DynamoDB: State Lock")]
+        Res["AWS Resources (VPC)"]
+        AppRes["AWS Resources (VPC Endpoint)"]
     end
     
-    TF -- "Initializes/Apps" --> S3
+    TF -- "Writes State" --> S3
     TF -- "Put/Get Lock" --> DB
     TF -- "Deploys" --> Res
+    
+    AppTF -- "Reads State (terraform_remote_state)" --> S3
+    AppTF -- "Deploys" --> AppRes
+    AppRes -. "Depends On" .-> Res
 
     %% Assign Classes
-    class TF terraform;
+    class TF,AppTF terraform;
     class S3 state;
     class DB db;
-    class Res external;
-    class Workspace,AWS container;
+    class Res,AppRes external;
+    class Workspace,AppWorkspace,AWS container;
 ```
 
 ---
@@ -68,6 +77,7 @@ data "aws_vpc" "existing" {
   }
 }
 ```
+You can also read **another Terraform project's state** using `terraform_remote_state`. This is how you pass data (like a VPC ID) from a foundational Networking stack to an Application stack.
 
 ---
 
@@ -95,15 +105,15 @@ data "aws_vpc" "existing" {
 2.  Terraform will detect your existing local state and ask: *"Do you want to copy existing state to the new backend?"*
 3.  Type **yes**. Your state is now safe in S3!
 
-### Step 4: Import an Existing Bucket
-Sometimes you want to manage manual resources without recreating them.
+### Step 4: Import an Existing EC2 Instance
+Sometimes you want to manage manual resources without recreating them. Let's import an EC2 instance.
 
-1.  Create a "Manual" bucket in the Web Console (e.g., `manual-import-test-123`).
+1.  Launch a manual EC2 instance in the AWS Management Console and note its Instance ID (e.g., `i-0abcd1234efgh5678`).
 2.  Add an `import` block to your `main.tf`:
     ```hcl
     import {
-      to = aws_s3_bucket.imported
-      id = "manual-import-test-123"
+      to = aws_instance.imported
+      id = "i-0abcd1234efgh5678"
     }
     ```
 3.  Run `terraform plan -generate-config-out=generated.tf`. Explain what happened.
@@ -130,7 +140,7 @@ Sometimes you want to manage manual resources without recreating them.
 
 1.  **State Migration**: Start with local state, then configure an S3/DynamoDB backend. Successfully run `terraform init` to migrate the state and verify the bucket contains the `.tfstate` file.
 2.  **Dual-Apply Conflict**: Open two terminal windows. Run `terraform apply` in both simultaneously. Provide the exact "Error acquiring the state lock" message from the second terminal.
-3.  **Cross-Stack Data**: Use the `terraform_remote_state` data source to allow a completely separate "App Stack" to read the `vpc_id` from your "Networking Stack".
+3.  **Cross-Stack Data (VPC Endpoints)**: Use the `terraform_remote_state` data source in a completely separate "App Stack" directory to read the `vpc_id` and `route_table_ids` from your "Networking Stack". Deploy an `aws_vpc_endpoint` for S3 into that VPC using the remotely retrieved IDs.
 4.  **Verification**: Document what happens to the DynamoDB table during an active `apply` (look for the `LockID` item).
 
 ---

@@ -35,6 +35,7 @@ graph TD
     
     subgraph CompMod ["Compute Module"]
         EC2_Code[EC2 & SG]
+        ELB_Code[ALB & Target Group]
     end
 
     %% Assign Classes
@@ -89,7 +90,7 @@ resource "aws_subnet" "public" {
 ```
 
 ### Step 3: Use `for_each` for Security Groups
-In a new `modules/security` folder:
+In a new `modules/security` folder, define your rules:
 ```hcl
 variable "ingress_rules" {
   type = map(number)
@@ -111,8 +112,53 @@ resource "aws_security_group_rule" "ingress" {
 }
 ```
 
-### Step 4: The Root Module
-In your main `main.tf` (root), call your modules:
+### Step 4: The Compute Module (EC2 & ALB)
+Create `modules/compute` and add an Application Load Balancer and EC2 instance (don't forget your variables!):
+```hcl
+resource "aws_lb" "web_alb" {
+  name               = "web-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [var.security_group_id]
+  subnets            = var.public_subnet_ids
+}
+
+resource "aws_lb_target_group" "web_tg" {
+  name     = "web-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = var.vpc_id
+}
+
+resource "aws_lb_listener" "web_listener" {
+  load_balancer_arn = aws_lb.web_alb.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.web_tg.arn
+  }
+}
+
+resource "aws_instance" "web" {
+  count                  = length(var.public_subnet_ids)
+  ami                    = "ami-0abcdef1234567890" # Replace with valid AMI
+  instance_type          = "t2.micro"
+  subnet_id              = var.public_subnet_ids[count.index]
+  vpc_security_group_ids = [var.security_group_id]
+}
+
+resource "aws_lb_target_group_attachment" "web_attach" {
+  count            = length(aws_instance.web)
+  target_group_arn = aws_lb_target_group.web_tg.arn
+  target_id        = aws_instance.web[count.index].id
+  port             = 80
+}
+```
+
+### Step 5: The Root Module
+In your main `main.tf` (root), tie all modules together:
 ```hcl
 module "vpc" {
   source = "./modules/networking"
@@ -121,6 +167,13 @@ module "vpc" {
 module "sg" {
   source = "./modules/security"
   vpc_id = module.vpc.vpc_id
+}
+
+module "compute" {
+  source              = "./modules/compute"
+  vpc_id              = module.vpc.vpc_id
+  public_subnet_ids   = module.vpc.public_subnet_ids
+  security_group_id   = module.sg.security_group_id
 }
 ```
 
@@ -141,11 +194,12 @@ module "sg" {
 2.  **Safety First**: Add a `validation` block to your `vpc_cidr` variable that ensures the CIDR mask is at least `/24`. Test this by trying to deploy a `/16` and recording the error message.
 3.  **The Handshake**: Create an `output` in your networking module that returns a list of all Subnet IDs.
 4.  **Verification**: Reference the module outputs in your root `main.tf` to print the total count of subnets created. Document how this code behaves differently in `us-east-1` (6 AZs) vs `us-west-1` (3 AZs).
+5.  **Load Balancer Test**: Output the ALB DNS name (`output "alb_dns_name"`). Once deployed, curl or open the DNS name in your browser to verify it successfully routes traffic to your instances.
 
 ---
 
 ## 🧹 Cleanup
-`terraform destroy`
-nd to local by removing the `backend` block and running `terraform init -migrate-state`.
-- Run `terraform destroy`.
-- Manually delete the S3 bucket and DynamoDB table.
+To avoid costs, destroy everything you built:
+```bash
+terraform destroy
+```

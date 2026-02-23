@@ -32,6 +32,28 @@ graph LR
     class State state;
 ```
 
+### Basic AWS Infrastructure Diagram
+
+```mermaid
+graph TD
+    %% Styling
+    classDef vpc fill:none,stroke:#3b48cc,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef subnet fill:none,stroke:#545b64,stroke-width:1px,stroke-dasharray: 5 5;
+    classDef resource fill:none,stroke:#c85581,stroke-width:2px;
+
+    subgraph VPC ["AWS VPC"]
+        subgraph Subnet ["Public Subnet"]
+            EC2[EC2 Instance]
+            SG[Security Group]
+            EC2 --> SG
+        end
+    end
+
+    class VPC vpc;
+    class Subnet subnet;
+    class EC2,SG resource;
+```
+
 ---
 
 ## 📚 Concepts
@@ -74,8 +96,8 @@ This JSON file is the only way Terraform knows which real-world resources belong
     ```
 3.  Run `terraform init`. Observe the new `.terraform` folder (don't touch it!).
 
-### Step 2: Define a Resource
-Add a VPC to `main.tf`:
+### Step 2: Define Resources
+Add a VPC, Subnet, Security Group, and EC2 Instance to `main.tf`:
 ```hcl
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
@@ -83,6 +105,58 @@ resource "aws_vpc" "main" {
 
   tags = {
     Name = "terraform-vpc"
+    Env  = "dev"
+  }
+}
+
+resource "aws_subnet" "public" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.1.0/24"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "terraform-public-subnet"
+  }
+}
+
+resource "aws_security_group" "web" {
+  name        = "allow_web"
+  description = "Allow inbound web traffic"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-2023.*-x86_64"]
+  }
+}
+
+resource "aws_instance" "web" {
+  ami                    = data.aws_ami.amazon_linux.id
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.public.id
+  vpc_security_group_ids = [aws_security_group.web.id]
+
+  tags = {
+    Name = "terraform-web-server"
     Env  = "dev"
   }
 }
@@ -106,10 +180,10 @@ resource "aws_vpc" "main" {
 ## 🧠 Lab Tasks: The Drift Detective
 **Goal**: Manage state and correct manual "out-of-band" changes.
 
-1.  **Preparation**: Deploy an S3 bucket via Terraform with a tag `Environment = "Dev"`. 
-2.  **The Sabotage**: Go to the **S3 Console** and manually change the tag to `Environment = "Prod"`.
+1.  **Preparation**: Ensure your EC2 instance is deployed via Terraform with the tag `Env = "dev"`. 
+2.  **The Sabotage**: Go to the **AWS EC2 Console** and manually change the tag to `Env = "prod"`.
 3.  **The Detection**: Run `terraform plan`. Observe how Terraform identifies that the real-world resource has "drifted" from your code.
-4.  **The Fix**: Run `terraform apply`. Verify that the tag is back to `"Dev"` in the console and document why this happens.
+4.  **The Fix**: Run `terraform apply`. Verify that the tag is back to `"dev"` in the console and document why this happens.
 
 ---
 
