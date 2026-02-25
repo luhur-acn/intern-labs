@@ -22,7 +22,7 @@ You are a Cloud Engineer tasked with modernizing a legacy environment. A previou
 The project requires **two distinct environments** (Dev and Prod) within the same AWS account, each with its own isolated network stack and a shared S3 state bucket.
 
 ```mermaid
-graph TD
+graph TB
     %% Styling (AWS Standards)
     classDef vpc fill:none,stroke:#8c4fff,stroke-width:2px;
     classDef subnet fill:none,stroke:#8c4fff,stroke-width:2px,stroke-dasharray: 5 5;
@@ -34,9 +34,13 @@ graph TD
     subgraph AWS_Acc ["AWS Account"]
         direction TB
 
+        TFState[(S3: tf-state-backend)]
+
         subgraph DevEnv ["DEV ENVIRONMENT"]
             direction TB
+            D_S3[(S3: capstone-dev)]
             subgraph DevVPC ["VPC: 10.0.0.0/16"]
+                direction LR
                 subgraph DevPub ["Public Subnet A (10.0.1.0/24)"]
                     D_EIP[Elastic IP] --> D_NLB(NLB)
                     D_NLB --> D_ALB(ALB)
@@ -49,14 +53,13 @@ graph TD
                 subgraph DevPrivB ["Private Subnet B (10.0.4.0/24)"]
                 end
             end
-            D_S3[(S3: capstone-dev)]
         end
-
-        DevEnv ~~~ ProdEnv
 
         subgraph ProdEnv ["PROD ENVIRONMENT"]
             direction TB
+            P_S3[(S3: capstone-prod)]
             subgraph ProdVPC ["VPC: 10.1.0.0/16"]
+                direction LR
                 subgraph ProdPub ["Public Subnet A (10.1.1.0/24)"]
                     P_EIP[Elastic IP] --> P_NLB(NLB)
                     P_NLB --> P_ALB(ALB)
@@ -69,11 +72,12 @@ graph TD
                 subgraph ProdPrivB ["Private Subnet B (10.1.4.0/24)"]
                 end
             end
-            P_S3[(S3: capstone-prod)]
         end
-
-        TFState[(S3: tf-state-backend)]
     end
+
+    %% Invisible links to prevent layout engine overlap
+    TFState ~~~ DevEnv
+    DevEnv ~~~ ProdEnv
 
     %% Assign Classes
     class DevEnv,ProdEnv env;

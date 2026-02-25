@@ -22,44 +22,57 @@ You are an **IaC Engineer** building a platform team's foundational infrastructu
 You will build **two environments** (dev and prod) from a single set of reusable modules using Terragrunt dependency blocks to wire outputs as inputs.
 
 ```mermaid
-graph TD
-    classDef root fill:none,stroke:#c85581,stroke-width:2px;
-    classDef env fill:none,stroke:#8c4fff,stroke-width:1px;
-    classDef mod fill:none,stroke:#ff9900,stroke-width:1px;
+graph LR
+    %% ── Styles ──────────────────────────────────────────────────────────────
+    classDef root    fill:none,stroke:#c85581,stroke-width:2px;
     classDef backend fill:none,stroke:#3b48cc,stroke-width:2px;
+    classDef envNode fill:none,stroke:#8c4fff,stroke-width:1.5px,stroke-dasharray:4 3;
+    classDef mod     fill:none,stroke:#ff9900,stroke-width:1px;
 
-    Root["root.hcl (Remote State + Provider)"]
-    DevEnv["dev/env.hcl"]
-    ProdEnv["prod/env.hcl"]
+    %% ── Root & Backend ───────────────────────────────────────────────────────
+    Root["🗂️ root.hcl\nRemote State + Provider"]
+    Backend[("🗄️ S3 + DynamoDB\nState Backend")]
+    Root --> Backend
 
+    %% ── DEV ENVIRONMENT ──────────────────────────────────────────────────────
+    subgraph Dev ["🔵 DEV ENVIRONMENT"]
+        direction TB
+        DevEnv["📄 dev/env.hcl"]
+        D_VPC["🌐 vpc"]
+        D_SG["🔒 security-groups"]
+        D_EC2["🖥️ ec2"]
+        D_S3["🪣 s3"]
+
+        DevEnv --> D_VPC & D_S3
+        D_VPC -->|dep| D_SG
+        D_VPC -->|dep| D_EC2
+        D_SG  -->|dep| D_EC2
+    end
+
+    %% ── PROD ENVIRONMENT ─────────────────────────────────────────────────────
+    subgraph Prod ["🟠 PROD ENVIRONMENT"]
+        direction TB
+        ProdEnv["📄 prod/env.hcl"]
+        P_VPC["🌐 vpc"]
+        P_SG["🔒 security-groups"]
+        P_EC2["🖥️ ec2"]
+        P_S3["🪣 s3"]
+
+        ProdEnv --> P_VPC & P_S3
+        P_VPC -->|dep| P_SG
+        P_VPC -->|dep| P_EC2
+        P_SG  -->|dep| P_EC2
+    end
+
+    %% ── Root connections ─────────────────────────────────────────────────────
     Root --> DevEnv
     Root --> ProdEnv
 
-    DevEnv --> D_VPC["dev/vpc"]
-    DevEnv --> D_SG["dev/security-groups"]
-    DevEnv --> D_EC2["dev/ec2"]
-    DevEnv --> D_S3["dev/s3"]
-
-    D_VPC -->|dependency| D_SG
-    D_SG -->|dependency| D_EC2
-    D_VPC -->|dependency| D_EC2
-
-    ProdEnv --> P_VPC["prod/vpc"]
-    ProdEnv --> P_SG["prod/security-groups"]
-    ProdEnv --> P_EC2["prod/ec2"]
-    ProdEnv --> P_S3["prod/s3"]
-
-    P_VPC -->|dependency| P_SG
-    P_SG -->|dependency| P_EC2
-    P_VPC -->|dependency| P_EC2
-
-    Backend["S3 + DynamoDB Backend"]
-    Root --> Backend
-
+    %% ── Class Assignments ────────────────────────────────────────────────────
     class Root root;
-    class DevEnv,ProdEnv env;
-    class D_VPC,D_SG,D_EC2,D_S3,P_VPC,P_SG,P_EC2,P_S3 mod;
     class Backend backend;
+    class DevEnv,ProdEnv envNode;
+    class D_VPC,D_SG,D_EC2,D_S3,P_VPC,P_SG,P_EC2,P_S3 mod;
 ```
 
 ---
