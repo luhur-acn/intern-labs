@@ -151,7 +151,7 @@
 
 | Capstone | Focus | Difficulty | Prerequisites |
 | :--- | :--- | :--- | :--- |
-| [Capstone: Architect the Cloud](labs/Project_Capstone_Architecture.md) | Design, build, and resilience-test a production HA architecture on AWS | Advanced | Labs 1–7 |
-| [Capstone: IaC Mastery](labs/Project_Capstone_IaC.md) | Author Terraform modules from scratch, wire with Terragrunt, master state management | Advanced | Labs 8–13 |
-| [Capstone: The Great Migration](labs/Project_Capstone_Import.md) | Discover legacy infrastructure via CLI/SDK and codify it into Terragrunt with `import` blocks | Advanced | Labs 1–13 |
+| [Capstone: Architect the Cloud](capstones/capstone1/Project_Capstone_Architecture.md) | Design, build, and resilience-test a production HA architecture on AWS | Advanced | Labs 1–7 |
+| [Capstone: The Great Migration](capstones/capstone2/Project_Capstone_Import.md) | Discover legacy infrastructure via CLI/SDK and codify it into Terragrunt with `import` blocks | Advanced | Labs 1–13 |
+| [Capstone: IaC Mastery](capstones/capstone3/Project_Capstone_IaC.md) | Author Terraform modules from scratch, wire with Terragrunt, master state management | Advanced | Labs 8–13 |
 
