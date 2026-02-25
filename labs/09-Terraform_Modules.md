@@ -193,7 +193,7 @@ module "compute" {
 1.  **Dynamic Subnetting**: Refactor your module to use `data "aws_availability_zones" "available" {}`. Use a `for_each` loop to create one public subnet in every available AZ automatically.
 2.  **Safety First**: Add a `validation` block to your `vpc_cidr` variable that ensures the CIDR mask is at least `/24`. Test this by trying to deploy a `/16` and recording the error message.
 3.  **The Handshake**: Create an `output` in your networking module that returns a list of all Subnet IDs.
-4.  **Verification**: Reference the module outputs in your root `main.tf` to print the total count of subnets created. Document how this code behaves differently in `us-east-1` (6 AZs) vs `us-west-1` (3 AZs).
+4.  **Verification**: Reference the module outputs in your root `main.tf` to print the total count of subnets created. Document how this code behaves differently in `us-east-1` (6 AZs) vs `us-west-2` (3 AZs).
 5.  **Load Balancer Test**: Output the ALB DNS name (`output "alb_dns_name"`). Once deployed, curl or open the DNS name in your browser to verify it successfully routes traffic to your instances.
 
 ---
