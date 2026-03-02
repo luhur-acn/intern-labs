@@ -467,9 +467,812 @@ infrastructure/
 
 ---
 
-#### 3.2 The `import` Block Pattern
+#### 3.2 Module Specifications
 
-Each `terragrunt.hcl` must have a sibling `import.tf` file. Use the IDs you recorded in `discovery.json` to populate them.
+> **Rule**: You may NOT use any modules from the Terraform Registry (e.g., `terraform-aws-modules`). Every module must be authored by you. Each module must use `for_each` to support a variable number of resources driven by input maps/lists.
+
+---
+
+##### 3.2.1 Module: VPC (`modules/vpc/`)
+
+**Required files**: `main.tf`, `variables.tf`, `outputs.tf`
+
+**Resources this module must manage**:
+
+| Resource | Terraform Type | Scaling |
+| :--- | :--- | :--- |
+| VPC | `aws_vpc` | 1 per module call |
+| Internet Gateway | `aws_internet_gateway` | 1 per module call |
+
+**Required Variables** (`variables.tf`):
+
+```hcl
+variable "vpc_cidr"     { type = string }
+variable "environment"  { type = string }
+variable "tags"         { type = map(string), default = {} }
+```
+
+**Required Outputs** (`outputs.tf`):
+
+```hcl
+output "vpc_id"  { value = aws_vpc.this.id }
+output "igw_id"  { value = aws_internet_gateway.this.id }
+```
+
+---
+
+##### 3.2.2 Module: Subnets (`modules/subnets/`)
+
+**Resources this module must manage**:
+
+| Resource | Terraform Type | Scaling |
+| :--- | :--- | :--- |
+| Subnets | `aws_subnet` | `for_each` over `var.subnets` map |
+| NAT Gateway | `aws_nat_gateway` | 1 per module call |
+| Elastic IP (for NAT) | `aws_eip` | 1 per module call |
+| Public Route Table | `aws_route_table` | 1 per module call |
+| Private Route Table | `aws_route_table` | 1 per module call |
+| RT Associations | `aws_route_table_association` | `for_each` — 1 per subnet |
+
+**Required Variables**:
+
+```hcl
+variable "vpc_id"       { type = string }
+variable "igw_id"       { type = string }
+variable "environment"  { type = string }
+variable "tags"         { type = map(string), default = {} }
+
+variable "subnets" {
+  description = "Map of subnets to create. Each key becomes the subnet name suffix."
+  type = map(object({
+    cidr_block        = string
+    availability_zone = string
+    tier              = string   # "public" or "private"
+  }))
+}
+```
+
+> **Scalability**: Define as many subnets as needed. Adding a third AZ or a new subnet is a data change, not a code change.
+
+**`for_each` pattern hint** (in `main.tf`):
+
+```hcl
+resource "aws_subnet" "this" {
+  for_each = var.subnets
+
+  vpc_id                  = var.vpc_id
+  cidr_block              = each.value.cidr_block
+  availability_zone       = each.value.availability_zone
+  map_public_ip_on_launch = each.value.tier == "public"
+
+  tags = merge(var.tags, {
+    Name = "${var.environment}-${each.key}"
+    Tier = each.value.tier
+  })
+}
+
+locals {
+  public_subnets  = { for k, v in var.subnets : k => v if v.tier == "public" }
+  private_subnets = { for k, v in var.subnets : k => v if v.tier == "private" }
+}
+
+resource "aws_route_table_association" "this" {
+  for_each       = var.subnets
+  subnet_id      = aws_subnet.this[each.key].id
+  route_table_id = each.value.tier == "public" ? aws_route_table.public.id : aws_route_table.private.id
+}
+```
+
+**Required Outputs**:
+
+```hcl
+output "subnet_ids" {
+  value = { for k, s in aws_subnet.this : k => s.id }
+}
+output "public_subnet_ids" {
+  value = [for k, s in aws_subnet.this : s.id if var.subnets[k].tier == "public"]
+}
+output "private_subnet_ids" {
+  value = [for k, s in aws_subnet.this : s.id if var.subnets[k].tier == "private"]
+}
+output "nat_gateway_id"    { value = aws_nat_gateway.this.id }
+output "public_rt_id"      { value = aws_route_table.public.id }
+output "private_rt_id"     { value = aws_route_table.private.id }
+```
+
+---
+
+##### 3.2.3 Module: Security Groups (`modules/security-groups/`)
+
+**Resources this module must manage**:
+
+| Resource | Terraform Type | Scaling |
+| :--- | :--- | :--- |
+| Security Groups | `aws_security_group` | `for_each` over `var.security_groups` map keys |
+| Ingress Rules | `aws_vpc_security_group_ingress_rule` | `for_each` — flattened from each SG's `ingress_rules` |
+| Egress Rules | `aws_vpc_security_group_egress_rule` | `for_each` — 1 allow-all per SG |
+
+**Design requirement**: Do not use inline `ingress` / `egress` blocks inside `aws_security_group`. Use separate rule resources to avoid Terraform conflicts.
+
+**Required Variables**:
+
+```hcl
+variable "vpc_id"       { type = string }
+variable "environment"  { type = string }
+variable "tags"         { type = map(string), default = {} }
+
+variable "security_groups" {
+  description = "Map of security groups to create, each with dynamic ingress rules."
+  type = map(object({
+    description   = string
+    ingress_rules = list(object({
+      description              = string
+      from_port                = number
+      to_port                  = number
+      ip_protocol              = string
+      cidr_ipv4                = optional(string)
+      referenced_security_group_id = optional(string)
+    }))
+  }))
+}
+```
+
+> **Scalability**: Define as many SGs as needed (e.g., `ec2`, `alb`), each with an arbitrary number of ingress rules. The `referenced_security_group_id` field allows SG-to-SG references (e.g., ALB → EC2).
+
+**`for_each` pattern hint** (in `main.tf`):
+
+```hcl
+resource "aws_security_group" "this" {
+  for_each    = var.security_groups
+  name        = "${var.environment}-${each.key}-sg"
+  description = each.value.description
+  vpc_id      = var.vpc_id
+  tags = merge(var.tags, { Name = "${var.environment}-${each.key}-sg" })
+}
+
+locals {
+  ingress_rules = flatten([
+    for sg_key, sg in var.security_groups : [
+      for idx, rule in sg.ingress_rules : {
+        sg_key      = sg_key
+        rule_key    = "${sg_key}-${idx}"
+        description = rule.description
+        from_port   = rule.from_port
+        to_port     = rule.to_port
+        ip_protocol = rule.ip_protocol
+        cidr_ipv4   = rule.cidr_ipv4
+        referenced_security_group_id = rule.referenced_security_group_id
+      }
+    ]
+  ])
+}
+
+resource "aws_vpc_security_group_ingress_rule" "this" {
+  for_each = { for r in local.ingress_rules : r.rule_key => r }
+
+  security_group_id            = aws_security_group.this[each.value.sg_key].id
+  description                  = each.value.description
+  from_port                    = each.value.from_port
+  to_port                      = each.value.to_port
+  ip_protocol                  = each.value.ip_protocol
+  cidr_ipv4                    = each.value.cidr_ipv4
+  referenced_security_group_id = each.value.referenced_security_group_id
+}
+
+resource "aws_vpc_security_group_egress_rule" "this" {
+  for_each          = var.security_groups
+  security_group_id = aws_security_group.this[each.key].id
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
+}
+```
+
+**Required Outputs**:
+
+```hcl
+output "security_group_ids" {
+  value = { for k, sg in aws_security_group.this : k => sg.id }
+}
+```
+
+---
+
+##### 3.2.4 Module: EC2 (`modules/ec2/`)
+
+**Resources this module must manage**:
+
+| Resource | Terraform Type | Scaling |
+| :--- | :--- | :--- |
+| EC2 Instances | `aws_instance` | `for_each` over `var.instances` map |
+| IAM Role | `aws_iam_role` | 1 shared role per module call |
+| IAM Instance Profile | `aws_iam_instance_profile` | 1 shared profile per module call |
+| IAM Policy Attachment (SSM) | `aws_iam_role_policy_attachment` | 1 per module call |
+
+**Required Variables**:
+
+```hcl
+variable "environment" { type = string }
+variable "tags"        { type = map(string), default = {} }
+
+variable "instances" {
+  description = "Map of instances to create."
+  type = map(object({
+    ami_id             = string
+    instance_type      = string
+    subnet_id          = string
+    security_group_ids = list(string)
+    user_data          = optional(string, "")
+  }))
+}
+```
+
+**Required Outputs**:
+
+```hcl
+output "instance_ids" {
+  value = { for k, inst in aws_instance.this : k => inst.id }
+}
+output "private_ips" {
+  value = { for k, inst in aws_instance.this : k => inst.private_ip }
+}
+output "iam_role_arn" { value = aws_iam_role.this.arn }
+```
+
+---
+
+##### 3.2.5 Module: ALB (`modules/alb/`)
+
+**Resources this module must manage**:
+
+| Resource | Terraform Type | Scaling |
+| :--- | :--- | :--- |
+| Application Load Balancer | `aws_lb` | 1 per module call |
+| Target Groups | `aws_lb_target_group` | `for_each` over `var.target_groups` map |
+| Target Group Attachments | `aws_lb_target_group_attachment` | `for_each` over `var.target_group_attachments` map |
+| Listeners | `aws_lb_listener` | `for_each` over `var.listeners` map |
+
+**Required Variables**:
+
+```hcl
+variable "environment"        { type = string }
+variable "name"               { type = string }
+variable "vpc_id"             { type = string }
+variable "subnet_ids"         { type = list(string) }
+variable "security_group_ids" { type = list(string) }
+variable "tags"               { type = map(string), default = {} }
+
+variable "target_groups" {
+  description = "Map of target groups to create."
+  type = map(object({
+    port        = number
+    protocol    = string
+    target_type = string
+    health_check_path = optional(string, "/")
+  }))
+}
+
+variable "target_group_attachments" {
+  description = "Map of target group attachments."
+  type = map(object({
+    target_group_key = string
+    target_id        = string
+    port             = optional(number)
+  }))
+  default = {}
+}
+
+variable "listeners" {
+  description = "Map of listeners to create."
+  type = map(object({
+    port             = number
+    protocol         = string
+    target_group_key = string
+  }))
+}
+```
+
+> **Scalability**: Add more target groups, listeners, or attachments by adding keys to the respective maps.
+
+**Required Outputs**:
+
+```hcl
+output "alb_arn"  { value = aws_lb.this.arn }
+output "alb_dns"  { value = aws_lb.this.dns_name }
+output "target_group_arns" {
+  value = { for k, tg in aws_lb_target_group.this : k => tg.arn }
+}
+output "listener_arns" {
+  value = { for k, l in aws_lb_listener.this : k => l.arn }
+}
+```
+
+---
+
+##### 3.2.6 Module: NLB (`modules/nlb/`)
+
+**Resources this module must manage**:
+
+| Resource | Terraform Type | Scaling |
+| :--- | :--- | :--- |
+| Network Load Balancer | `aws_lb` | 1 per module call |
+| Elastic IP | `aws_eip` | `for_each` over `var.eips` (keyed per subnet) |
+| Target Groups | `aws_lb_target_group` | `for_each` over `var.target_groups` map |
+| Target Group Attachments | `aws_lb_target_group_attachment` | `for_each` over `var.target_group_attachments` map |
+| Listeners | `aws_lb_listener` | `for_each` over `var.listeners` map |
+
+**Required Variables**:
+
+```hcl
+variable "environment"  { type = string }
+variable "name"         { type = string }
+variable "vpc_id"       { type = string }
+variable "tags"         { type = map(string), default = {} }
+
+variable "subnet_mappings" {
+  description = "Map of subnet mappings with EIP allocation IDs."
+  type = map(object({
+    subnet_id     = string
+    allocation_id = string
+  }))
+}
+
+variable "target_groups" {
+  description = "Map of target groups to create."
+  type = map(object({
+    port        = number
+    protocol    = string
+    target_type = string
+  }))
+}
+
+variable "target_group_attachments" {
+  description = "Map of target group attachments."
+  type = map(object({
+    target_group_key = string
+    target_id        = string
+    port             = optional(number)
+  }))
+  default = {}
+}
+
+variable "listeners" {
+  description = "Map of listeners to create."
+  type = map(object({
+    port             = number
+    protocol         = string
+    target_group_key = string
+  }))
+}
+```
+
+**Required Outputs**:
+
+```hcl
+output "nlb_arn"  { value = aws_lb.this.arn }
+output "nlb_dns"  { value = aws_lb.this.dns_name }
+output "eip_ids" {
+  value = { for k, eip in aws_eip.this : k => eip.id }
+}
+output "target_group_arns" {
+  value = { for k, tg in aws_lb_target_group.this : k => tg.arn }
+}
+```
+
+---
+
+##### 3.2.7 Module: S3 (`modules/s3/`)
+
+**Resources this module must manage**:
+
+| Resource | Terraform Type | Scaling |
+| :--- | :--- | :--- |
+| S3 Buckets | `aws_s3_bucket` | `for_each` over `var.buckets` map |
+| Block Public Access | `aws_s3_bucket_public_access_block` | `for_each` — 1 per bucket |
+| Encryption Config | `aws_s3_bucket_server_side_encryption_configuration` | `for_each` — 1 per bucket |
+| Versioning Config | `aws_s3_bucket_versioning` | `for_each` — 1 per bucket |
+
+**Required Variables**:
+
+```hcl
+variable "environment" { type = string }
+variable "tags"        { type = map(string), default = {} }
+
+variable "buckets" {
+  description = "Map of S3 buckets to import/manage. Key = the exact existing bucket name."
+  type = map(object({
+    versioning_enabled = optional(bool, true)
+  }))
+}
+```
+
+> **Note for import**: Unlike Capstone 2, bucket names already exist. Use the exact bucket name as the map key so imports align correctly.
+
+**Required Outputs**:
+
+```hcl
+output "bucket_names" {
+  value = { for k, b in aws_s3_bucket.this : k => b.id }
+}
+output "bucket_arns" {
+  value = { for k, b in aws_s3_bucket.this : k => b.arn }
+}
+```
+
+---
+
+#### 3.3 Terragrunt Wiring
+
+##### `dev/env.hcl`
+
+This file contains only **shared, environment-level** variables. Resource-specific inputs live in each stack's `terragrunt.hcl`.
+
+```hcl
+locals {
+  environment = "dev"
+  vpc_cidr    = "10.0.0.0/16"
+  ami_id      = "ami-0c02fb55956c7d316"  # Amazon Linux 2023 us-east-1
+}
+```
+
+---
+
+##### `dev/vpc/terragrunt.hcl`
+
+```hcl
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
+locals {
+  env_vars = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+  env      = local.env_vars.locals
+}
+
+terraform {
+  source = "../../../modules//vpc"
+}
+
+inputs = {
+  vpc_cidr    = local.env.vpc_cidr
+  environment = local.env.environment
+}
+```
+
+---
+
+##### `dev/subnets/terragrunt.hcl`
+
+```hcl
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
+locals {
+  env_vars = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+  env      = local.env_vars.locals
+}
+
+terraform {
+  source = "../../../modules//subnets"
+}
+
+dependency "vpc" {
+  config_path = "../vpc"
+  mock_outputs = {
+    vpc_id = "vpc-00000000000000000"
+    igw_id = "igw-00000000000000000"
+  }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+inputs = {
+  vpc_id      = dependency.vpc.outputs.vpc_id
+  igw_id      = dependency.vpc.outputs.igw_id
+  environment = local.env.environment
+
+  subnets = {
+    public-a  = { cidr_block = "10.0.1.0/24", availability_zone = "us-east-1a", tier = "public" }
+    private-a = { cidr_block = "10.0.2.0/24", availability_zone = "us-east-1a", tier = "private" }
+    public-b  = { cidr_block = "10.0.3.0/24", availability_zone = "us-east-1b", tier = "public" }
+    private-b = { cidr_block = "10.0.4.0/24", availability_zone = "us-east-1b", tier = "private" }
+  }
+}
+```
+
+> **Scalability**: To add a third AZ, add `public-c` and `private-c` keys here — no module code changes.
+
+---
+
+##### `dev/security-groups/terragrunt.hcl`
+
+```hcl
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
+locals {
+  env_vars = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+  env      = local.env_vars.locals
+}
+
+terraform {
+  source = "../../../modules//security-groups"
+}
+
+dependency "vpc" {
+  config_path = "../vpc"
+  mock_outputs = {
+    vpc_id = "vpc-00000000000000000"
+  }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+inputs = {
+  vpc_id      = dependency.vpc.outputs.vpc_id
+  environment = local.env.environment
+
+  security_groups = {
+    ec2 = {
+      description = "EC2 instance traffic"
+      ingress_rules = [
+        { description = "HTTP from ALB", from_port = 80, to_port = 80, ip_protocol = "tcp", referenced_security_group_id = "sg-alb-placeholder" },
+        { description = "SSH internal",  from_port = 22, to_port = 22, ip_protocol = "tcp", cidr_ipv4 = "10.0.0.0/8" },
+      ]
+    }
+    alb = {
+      description = "ALB traffic"
+      ingress_rules = [
+        { description = "HTTP from internet", from_port = 80, to_port = 80, ip_protocol = "tcp", cidr_ipv4 = "0.0.0.0/0" },
+      ]
+    }
+  }
+}
+```
+
+> **Note**: Replace `sg-alb-placeholder` with the actual ALB SG ID from `discovery.json`, or restructure using a self-referencing dependency after the initial import.
+
+---
+
+##### `dev/ec2/terragrunt.hcl`
+
+```hcl
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
+locals {
+  env_vars = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+  env      = local.env_vars.locals
+}
+
+terraform {
+  source = "../../../modules//ec2"
+}
+
+dependency "subnets" {
+  config_path = "../subnets"
+  mock_outputs = {
+    private_subnet_ids = ["subnet-00000000000000000"]
+  }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+dependency "security_groups" {
+  config_path = "../security-groups"
+  mock_outputs = {
+    security_group_ids = { ec2 = "sg-00000000000000000" }
+  }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+inputs = {
+  environment = local.env.environment
+
+  instances = {
+    web = {
+      ami_id             = local.env.ami_id
+      instance_type      = "t3.micro"
+      subnet_id          = dependency.subnets.outputs.private_subnet_ids[0]
+      security_group_ids = [dependency.security_groups.outputs.security_group_ids["ec2"]]
+      user_data          = <<-EOF
+        #!/bin/bash
+        yum update -y
+        yum install -y httpd
+        echo "<h1>Capstone Dev Server - $(hostname -f)</h1>" > /var/www/html/index.html
+        systemctl start httpd && systemctl enable httpd
+      EOF
+    }
+  }
+}
+```
+
+---
+
+##### `dev/alb/terragrunt.hcl`
+
+```hcl
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
+locals {
+  env_vars = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+  env      = local.env_vars.locals
+}
+
+terraform {
+  source = "../../../modules//alb"
+}
+
+dependency "vpc" {
+  config_path = "../vpc"
+  mock_outputs = { vpc_id = "vpc-00000000000000000" }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+dependency "subnets" {
+  config_path = "../subnets"
+  mock_outputs = { public_subnet_ids = ["subnet-00000000000000000", "subnet-11111111111111111"] }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+dependency "security_groups" {
+  config_path = "../security-groups"
+  mock_outputs = { security_group_ids = { alb = "sg-00000000000000000" } }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+dependency "ec2" {
+  config_path = "../ec2"
+  mock_outputs = { instance_ids = { web = "i-00000000000000000" } }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+inputs = {
+  environment        = local.env.environment
+  name               = "capstone-${local.env.environment}-alb"
+  vpc_id             = dependency.vpc.outputs.vpc_id
+  subnet_ids         = dependency.subnets.outputs.public_subnet_ids
+  security_group_ids = [dependency.security_groups.outputs.security_group_ids["alb"]]
+
+  target_groups = {
+    ec2-http = {
+      port        = 80
+      protocol    = "HTTP"
+      target_type = "instance"
+      health_check_path = "/"
+    }
+  }
+
+  target_group_attachments = {
+    web = {
+      target_group_key = "ec2-http"
+      target_id        = dependency.ec2.outputs.instance_ids["web"]
+      port             = 80
+    }
+  }
+
+  listeners = {
+    http = {
+      port             = 80
+      protocol         = "HTTP"
+      target_group_key = "ec2-http"
+    }
+  }
+}
+```
+
+---
+
+##### `dev/nlb/terragrunt.hcl`
+
+```hcl
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
+locals {
+  env_vars = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+  env      = local.env_vars.locals
+}
+
+terraform {
+  source = "../../../modules//nlb"
+}
+
+dependency "vpc" {
+  config_path = "../vpc"
+  mock_outputs = { vpc_id = "vpc-00000000000000000" }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+dependency "subnets" {
+  config_path = "../subnets"
+  mock_outputs = { subnet_ids = { "public-a" = "subnet-00000000000000000" } }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+dependency "alb" {
+  config_path = "../alb"
+  mock_outputs = { alb_arn = "arn:aws:elasticloadbalancing:us-east-1:000000000000:loadbalancer/app/mock/0000" }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+inputs = {
+  environment = local.env.environment
+  name        = "capstone-${local.env.environment}-nlb"
+  vpc_id      = dependency.vpc.outputs.vpc_id
+
+  # EIP is pre-existing — use allocation ID from discovery.json
+  subnet_mappings = {
+    public-a = {
+      subnet_id     = dependency.subnets.outputs.subnet_ids["public-a"]
+      allocation_id = "eipalloc-xxxxxxxxxxxxxxxxx"  # from discovery.json
+    }
+  }
+
+  target_groups = {
+    alb = {
+      port        = 80
+      protocol    = "TCP"
+      target_type = "alb"
+    }
+  }
+
+  target_group_attachments = {
+    alb = {
+      target_group_key = "alb"
+      target_id        = dependency.alb.outputs.alb_arn
+    }
+  }
+
+  listeners = {
+    tcp-80 = {
+      port             = 80
+      protocol         = "TCP"
+      target_group_key = "alb"
+    }
+  }
+}
+```
+
+---
+
+##### `dev/s3/terragrunt.hcl`
+
+```hcl
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
+locals {
+  env_vars = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+  env      = local.env_vars.locals
+}
+
+terraform {
+  source = "../../../modules//s3"
+}
+
+inputs = {
+  environment = local.env.environment
+
+  # Use exact existing bucket names as keys (for import alignment)
+  buckets = {
+    "capstone-dev-[yourname]-[random]" = {
+      versioning_enabled = true
+    }
+  }
+}
+```
+
+> **Scalability**: To manage additional buckets, add keys to the `buckets` map.
+
+---
+
+#### 3.4 The `import` Block Pattern
+
+Each `terragrunt.hcl` must have a sibling `import.tf` file. Use the IDs from `discovery.json` to populate them. Resource addresses must match the `for_each` keys defined in the modules.
 
 **Example `dev/vpc/import.tf`:**
 ```hcl
@@ -479,64 +1282,124 @@ import {
 }
 
 import {
-  to = module.vpc.aws_internet_gateway.this[0]
+  to = module.vpc.aws_internet_gateway.this
   id = "igw-xxxxxxxxxxxxxxxxx"
 }
 ```
 
-**Example `dev/subnets/import.tf`:**
+**Example `dev/subnets/import.tf`** — keys must match the `subnets` map:
 ```hcl
 import {
-  to = module.subnets.aws_subnet.public["public-a"]
+  to = module.subnets.aws_subnet.this["public-a"]
   id = "subnet-xxxxxxxxxxxxxxxxx"
 }
 
 import {
-  to = module.subnets.aws_subnet.public["public-b"]
+  to = module.subnets.aws_subnet.this["private-a"]
   id = "subnet-xxxxxxxxxxxxxxxxx"
 }
 
 import {
-  to = module.subnets.aws_subnet.private["private-a"]
+  to = module.subnets.aws_subnet.this["public-b"]
   id = "subnet-xxxxxxxxxxxxxxxxx"
 }
 
 import {
-  to = module.subnets.aws_subnet.private["private-b"]
+  to = module.subnets.aws_subnet.this["private-b"]
   id = "subnet-xxxxxxxxxxxxxxxxx"
+}
+
+import {
+  to = module.subnets.aws_nat_gateway.this
+  id = "nat-xxxxxxxxxxxxxxxxx"
+}
+
+import {
+  to = module.subnets.aws_eip.this
+  id = "eipalloc-xxxxxxxxxxxxxxxxx"
+}
+
+import {
+  to = module.subnets.aws_route_table.public
+  id = "rtb-xxxxxxxxxxxxxxxxx"
+}
+
+import {
+  to = module.subnets.aws_route_table.private
+  id = "rtb-xxxxxxxxxxxxxxxxx"
+}
+```
+
+**Example `dev/security-groups/import.tf`** — keys must match the `security_groups` map:
+```hcl
+import {
+  to = module.security_groups.aws_security_group.this["ec2"]
+  id = "sg-xxxxxxxxxxxxxxxxx"
+}
+
+import {
+  to = module.security_groups.aws_security_group.this["alb"]
+  id = "sg-xxxxxxxxxxxxxxxxx"
+}
+
+# Import each ingress rule by its flattened key
+import {
+  to = module.security_groups.aws_vpc_security_group_ingress_rule.this["ec2-0"]
+  id = "sgr-xxxxxxxxxxxxxxxxx"
+}
+
+import {
+  to = module.security_groups.aws_vpc_security_group_ingress_rule.this["ec2-1"]
+  id = "sgr-xxxxxxxxxxxxxxxxx"
+}
+
+import {
+  to = module.security_groups.aws_vpc_security_group_ingress_rule.this["alb-0"]
+  id = "sgr-xxxxxxxxxxxxxxxxx"
+}
+```
+
+**Example `dev/ec2/import.tf`** — keys must match the `instances` map:
+```hcl
+import {
+  to = module.ec2.aws_instance.this["web"]
+  id = "i-xxxxxxxxxxxxxxxxx"
+}
+
+import {
+  to = module.ec2.aws_iam_role.this
+  id = "capstone-dev-ec2-role"
+}
+
+import {
+  to = module.ec2.aws_iam_instance_profile.this
+  id = "capstone-dev-ec2-profile"
 }
 ```
 
 ---
 
-#### 3.3 Import Order (Dependency-Aware)
+#### 3.5 Import Order (Dependency-Aware)
 
 Resources have dependencies. You must import them **in this order** to avoid state errors:
 
 ```mermaid
 graph LR
     VPC --> Subnets
-    VPC --> IGW
-    IGW --> PublicRT[Public Route Table]
-    Subnets --> NatGW[NAT Gateway]
-    NatGW --> PrivateRT[Private Route Table]
-    PublicRT --> SG[Security Groups]
-    PrivateRT --> SG
+    Subnets --> SG[Security Groups]
     SG --> EC2
     Subnets --> ALB
     SG --> ALB
+    EC2 --> ALB
     ALB --> NLB
-    EC2 --> TG_EC2[EC2 Target Group]
-    TG_EC2 --> ALB
-    ALB --> TG_ALB[ALB Target Group]
-    TG_ALB --> NLB
+    S3
 ```
 
 Import and verify each layer before proceeding to the next. Check with `terragrunt plan` after each module import.
 
 ---
 
-#### 3.4 The Root Configuration (`root.hcl`)
+#### 3.6 The Root Configuration (`root.hcl`)
 
 Your root config must configure the remote state backend using the `capstone-tfstate-*` bucket you created.
 
@@ -586,7 +1449,25 @@ EOF
 
 ---
 
-#### 3.5 Success Criteria
+#### 3.7 Task: Wire `prod/` Independently
+
+Replicate the same wiring for `prod/`. The `prod/env.hcl`:
+
+```hcl
+locals {
+  environment = "prod"
+  vpc_cidr    = "10.1.0.0/16"
+  ami_id      = "ami-0c02fb55956c7d316"
+}
+```
+
+Each stack's `terragrunt.hcl` under `prod/` follows the same pattern as `dev/` but with prod-specific values (e.g., `10.1.x.0/24` CIDRs, prod bucket names, prod resource IDs in `import.tf`).
+
+> **Validation**: Run `terragrunt run-all validate` from within `infrastructure/dev/` only. Confirm it does not trigger any `prod` runs.
+
+---
+
+#### 3.8 Success Criteria
 
 A successful migration is achieved when **all** of the following are true:
 
@@ -595,7 +1476,7 @@ A successful migration is achieved when **all** of the following are true:
    ```bash
    aws s3 ls s3://capstone-tfstate-[yourname]-[random]/capstone/ --recursive
    ```
-3. Each resource is addressed logically (e.g., `module.vpc.aws_vpc.this`). Verify by running:
+3. Each resource is addressed logically with `for_each` keys (e.g., `module.subnets.aws_subnet.this["public-a"]`). Verify by running:
    ```bash
    # From within a module folder:
    terragrunt state list
@@ -620,26 +1501,35 @@ terragrunt state show module.vpc.aws_vpc.this | grep cidr_block
 aws ec2 describe-vpcs --vpc-ids vpc-xxxxxx --query "Vpcs[0].CidrBlock"
 ```
 
-**EC2 Instance:**
+**Subnet (for_each-keyed):**
+```bash
+# Get CIDR from state (note the for_each key)
+terragrunt state show 'module.subnets.aws_subnet.this["public-a"]' | grep cidr_block
+
+# Compare against live reality
+aws ec2 describe-subnets --subnet-ids subnet-xxxxxx --query "Subnets[0].CidrBlock"
+```
+
+**EC2 Instance (for_each-keyed):**
 ```bash
 # Get private IP from state
-terragrunt state show module.ec2.aws_instance.this | grep private_ip
+terragrunt state show 'module.ec2.aws_instance.this["web"]' | grep private_ip
 
 # Compare against live reality
 aws ec2 describe-instances --instance-ids i-xxxxxx \
   --query "Reservations[0].Instances[0].PrivateIpAddress"
 ```
 
-**S3 Bucket Versioning:**
+**S3 Bucket Versioning (for_each-keyed):**
 ```bash
 # Get versioning from state
-terragrunt state show module.s3.aws_s3_bucket_versioning.this | grep status
+terragrunt state show 'module.s3.aws_s3_bucket_versioning.this["capstone-dev-yourname-random"]' | grep status
 
 # Compare against live reality
 aws s3api get-bucket-versioning --bucket capstone-dev-[yourname]-[random]
 ```
 
-**Task**: Run all three comparisons for **both** environments and document the results in a `verification_report.md` file. All values must match.
+**Task**: Run all comparisons for **both** environments and document the results in a `verification_report.md` file. All values must match.
 
 ---
 
@@ -700,7 +1590,9 @@ aws ec2 describe-instances \
 
 #### 5.2 Security Group Hardening
 
-1. **Remove** the broad `10.0.0.0/8` SSH inbound rule from the EC2 security groups.
+Update the `security_groups` map in your `security-groups/terragrunt.hcl`:
+
+1. **Remove** the `cidr_ipv4 = "10.0.0.0/8"` SSH rule from the `ec2` SG.
 2. **Add** a new rule: allow SSH (22) **only from your current public IP**.
 
 First, query your current public IP from the CLI:
@@ -709,7 +1601,18 @@ MY_IP=$(curl -s https://checkip.amazonaws.com)/32
 echo "Your IP: $MY_IP"
 ```
 
-Add this value to your `security-groups/terragrunt.hcl` inputs. After apply, verify:
+Update the `ec2` security group's `ingress_rules` list in `security-groups/terragrunt.hcl`:
+```hcl
+    ec2 = {
+      description = "EC2 instance traffic"
+      ingress_rules = [
+        { description = "HTTP from ALB", from_port = 80, to_port = 80, ip_protocol = "tcp", referenced_security_group_id = "sg-alb-id" },
+        { description = "SSH from my IP", from_port = 22, to_port = 22, ip_protocol = "tcp", cidr_ipv4 = "YOUR_IP/32" },
+      ]
+    }
+```
+
+**Verify with CLI** after apply:
 ```bash
 aws ec2 describe-security-group-rules \
   --filters "Name=group-id,Values=sg-xxxxxx" \
@@ -723,9 +1626,8 @@ Confirm: Only **one** SSH rule exists, and it references **your IP**.
 
 #### 5.3 ALB Access Logging
 
-Enable access logging on **both** ALBs. Logs should be written to a new prefix within the `capstone-dev` and `capstone-prod` S3 buckets.
+Enable access logging on **both** ALBs by adding `access_logs` to `alb/terragrunt.hcl` inputs:
 
-In your `alb/terragrunt.hcl`:
 ```hcl
 inputs = {
   # ... existing inputs
@@ -750,23 +1652,21 @@ aws elbv2 describe-load-balancer-attributes \
 
 #### 5.4 S3 Lifecycle Policy
 
-Add a **lifecycle rule** to **both** application S3 buckets to automatically expire non-current versions after **30 days**.
+Add a **lifecycle rule** to **both** application S3 buckets by updating `s3/terragrunt.hcl` inputs. Add `noncurrent_expiry_days` to each bucket in the `buckets` map:
 
-In your `s3/terragrunt.hcl`:
 ```hcl
 inputs = {
-  # ... existing inputs
-  lifecycle_rules = [
-    {
-      id      = "expire-old-versions"
-      enabled = true
-      noncurrent_version_expiration = {
-        days = 30
-      }
+  environment = local.env.environment
+  buckets = {
+    "capstone-dev-[yourname]-[random]" = {
+      versioning_enabled     = true
+      noncurrent_expiry_days = 30
     }
-  ]
+  }
 }
 ```
+
+> This requires adding `noncurrent_expiry_days` as an optional field to the `buckets` variable and adding an `aws_s3_bucket_lifecycle_configuration` resource with `for_each` in your S3 module.
 
 **Verify with CLI:**
 ```bash
@@ -808,9 +1708,10 @@ Then manually delete resources **not managed by Terragrunt**:
 | 2 | `discovery.sh` | CLI-based discovery script |
 | 3 | `audit.py` | Boto3 audit script with paginators and cross-references |
 | 4 | `discovery.json` | Full structured resource map output by `audit.py` |
-| 5 | `infrastructure/` (Git repo) | Complete DRY Terragrunt repo with `import.tf` files |
-| 6 | Plan "No Changes" Log | `terragrunt run-all plan` log before Phase 5 changes |
-| 7 | `verification_report.md` | State vs. reality comparison for all resources |
-| 8 | Phase 5 Apply Log | Clean `terragrunt run-all apply` showing only tag/SG/S3 changes |
-| 9 | CLI Verification Output | CLI output confirming each Phase 5 change |
-| 10 | `curl` HTTP Test | 200 OK response from both NLB DNS endpoints |
+| 5 | `modules/` | Scalable Terraform modules with `for_each` (VPC, Subnets, SGs, EC2, ALB, NLB, S3) |
+| 6 | `infrastructure/` (Git repo) | Complete DRY Terragrunt repo with `import.tf` files and per-stack inputs |
+| 7 | Plan "No Changes" Log | `terragrunt run-all plan` log before Phase 5 changes |
+| 8 | `verification_report.md` | State vs. reality comparison for all `for_each`-keyed resources |
+| 9 | Phase 5 Apply Log | Clean `terragrunt run-all apply` showing only tag/SG/S3 changes |
+| 10 | CLI Verification Output | CLI output confirming each Phase 5 change |
+| 11 | `curl` HTTP Test | 200 OK response from both NLB DNS endpoints |
