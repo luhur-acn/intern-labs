@@ -150,20 +150,18 @@ aws dynamodb create-table \
 
 **Resources this module must manage**:
 
-| Resource | Terraform Type |
-| :--- | :--- |
-| VPC | `aws_vpc` |
-| Public Subnet A | `aws_subnet` |
-| Public Subnet B | `aws_subnet` |
-| Private Subnet A | `aws_subnet` |
-| Private Subnet B | `aws_subnet` |
-| Internet Gateway | `aws_internet_gateway` |
-| NAT Gateway | `aws_nat_gateway` |
-| Elastic IP (for NAT) | `aws_eip` |
-| Public Route Table | `aws_route_table` |
-| Private Route Table | `aws_route_table` |
-| Public RT Associations | `aws_route_table_association` |
-| Private RT Associations | `aws_route_table_association` |
+| Resource | Terraform Type | Scaling |
+| :--- | :--- | :--- |
+| VPC | `aws_vpc` | 1 per module call |
+| Public Subnets | `aws_subnet` | `for_each` over `var.public_subnet_cidrs` |
+| Private Subnets | `aws_subnet` | `for_each` over `var.private_subnet_cidrs` |
+| Internet Gateway | `aws_internet_gateway` | 1 per module call |
+| NAT Gateway | `aws_nat_gateway` | 1 per module call |
+| Elastic IP (for NAT) | `aws_eip` | 1 per module call |
+| Public Route Table | `aws_route_table` | 1 per module call |
+| Private Route Table | `aws_route_table` | 1 per module call |
+| Public RT Associations | `aws_route_table_association` | `for_each` — 1 per public subnet |
+| Private RT Associations | `aws_route_table_association` | `for_each` — 1 per private subnet |
 
 **Required Variables** (`variables.tf`):
 
@@ -176,17 +174,53 @@ variable "environment"          { type = string }
 variable "tags"                 { type = map(string), default = {} }
 ```
 
+> **Scalability**: The number of subnets is driven entirely by the length of `public_subnet_cidrs` and `private_subnet_cidrs`. Pass 2, 3, or 6 CIDRs — the module creates that many subnets without code changes.
+
+**`for_each` pattern hint** (in `main.tf`):
+
+```hcl
+locals {
+  public_subnets = zipmap(var.availability_zones, var.public_subnet_cidrs)
+  private_subnets = zipmap(var.availability_zones, var.private_subnet_cidrs)
+}
+
+resource "aws_subnet" "public" {
+  for_each          = local.public_subnets
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = each.value
+  availability_zone = each.key
+  map_public_ip_on_launch = true
+  tags = merge(var.tags, {
+    Name = "${var.environment}-public-${each.key}"
+    Tier = "public"
+  })
+}
+
+resource "aws_subnet" "private" {
+  for_each          = local.private_subnets
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = each.value
+  availability_zone = each.key
+  tags = merge(var.tags, {
+    Name = "${var.environment}-private-${each.key}"
+    Tier = "private"
+  })
+}
+```
+
 **Required Outputs** (`outputs.tf`) — these will be consumed by other modules via Terragrunt `dependency` blocks:
 
 ```hcl
 output "vpc_id"             { value = aws_vpc.this.id }
-output "public_subnet_ids"  { value = [aws_subnet.public_a.id, aws_subnet.public_b.id] }
-output "private_subnet_ids" { value = [aws_subnet.private_a.id, aws_subnet.private_b.id] }
+output "public_subnet_ids"  { value = values(aws_subnet.public)[*].id }
+output "private_subnet_ids" { value = values(aws_subnet.private)[*].id }
 output "public_rt_id"       { value = aws_route_table.public.id }
 output "private_rt_id"      { value = aws_route_table.private.id }
 ```
 
-**Constraint**: Use `for_each` or `count` for subnet creation — not individual resource blocks for each subnet.
+> **Note**: Outputs use `values(...)[*].id` so they automatically scale — adding a third AZ to the input lists produces a third subnet ID in the output without any code change.
+
+**Constraint**: Use `for_each` for subnet creation — not individual resource blocks for each subnet. Route table associations must also use `for_each`.
 
 ---
 
@@ -194,28 +228,95 @@ output "private_rt_id"      { value = aws_route_table.private.id }
 
 **Resources this module must manage**:
 
-| Resource | Terraform Type |
-| :--- | :--- |
-| EC2 Security Group | `aws_security_group` |
-| EC2 SG Inbound Rule (SSH) | `aws_vpc_security_group_ingress_rule` |
-| EC2 SG Inbound Rule (HTTP) | `aws_vpc_security_group_ingress_rule` |
-| EC2 SG Outbound Rule | `aws_vpc_security_group_egress_rule` |
+| Resource | Terraform Type | Scaling |
+| :--- | :--- | :--- |
+| Security Groups | `aws_security_group` | `for_each` over `var.security_groups` map keys |
+| Ingress Rules | `aws_vpc_security_group_ingress_rule` | `for_each` — flattened from each SG's `ingress_rules` list |
+| Egress Rules | `aws_vpc_security_group_egress_rule` | `for_each` — 1 allow-all per SG |
 
 **Design requirement**: Do not use inline `ingress` / `egress` blocks inside the `aws_security_group` resource. Use the separate `aws_vpc_security_group_ingress_rule` / `aws_vpc_security_group_egress_rule` resources instead. Explain in a comment why this avoids Terraform conflicts.
 
 **Required Variables**:
 
 ```hcl
-variable "vpc_id"            { type = string }
-variable "environment"       { type = string }
-variable "allowed_ssh_cidrs" { type = list(string) }
-variable "tags"              { type = map(string), default = {} }
+variable "vpc_id"      { type = string }
+variable "environment" { type = string }
+variable "tags"        { type = map(string), default = {} }
+
+variable "security_groups" {
+  description = "Map of security groups to create. Each key becomes the SG name suffix."
+  type = map(object({
+    description   = string
+    ingress_rules = list(object({
+      description = string
+      from_port   = number
+      to_port     = number
+      ip_protocol = string
+      cidr_ipv4   = string
+    }))
+  }))
+}
+```
+
+> **Scalability**: Define as many security groups as needed (e.g., `ec2`, `alb`, `rds`), each with an arbitrary number of ingress rules. Adding a new SG or rule is a data change, not a code change.
+
+**`for_each` pattern hint** (in `main.tf`):
+
+```hcl
+# --- Security Groups (one per map key) ---
+resource "aws_security_group" "this" {
+  for_each    = var.security_groups
+  name        = "${var.environment}-${each.key}-sg"
+  description = each.value.description
+  vpc_id      = var.vpc_id
+  tags = merge(var.tags, { Name = "${var.environment}-${each.key}-sg" })
+}
+
+# --- Ingress Rules (flatten SG × rules) ---
+locals {
+  ingress_rules = flatten([
+    for sg_key, sg in var.security_groups : [
+      for idx, rule in sg.ingress_rules : {
+        sg_key      = sg_key
+        rule_key    = "${sg_key}-${idx}"
+        description = rule.description
+        from_port   = rule.from_port
+        to_port     = rule.to_port
+        ip_protocol = rule.ip_protocol
+        cidr_ipv4   = rule.cidr_ipv4
+      }
+    ]
+  ])
+}
+
+resource "aws_vpc_security_group_ingress_rule" "this" {
+  for_each = { for r in local.ingress_rules : r.rule_key => r }
+
+  security_group_id = aws_security_group.this[each.value.sg_key].id
+  description       = each.value.description
+  from_port         = each.value.from_port
+  to_port           = each.value.to_port
+  ip_protocol       = each.value.ip_protocol
+  cidr_ipv4         = each.value.cidr_ipv4
+}
+
+# --- Egress: allow all outbound per SG ---
+resource "aws_vpc_security_group_egress_rule" "this" {
+  for_each          = var.security_groups
+  security_group_id = aws_security_group.this[each.key].id
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
+  description       = "Allow all outbound"
+}
 ```
 
 **Required Outputs**:
 
 ```hcl
-output "ec2_sg_id" { value = aws_security_group.ec2.id }
+# Returns a map: { "ec2" = "sg-abc...", "alb" = "sg-def..." }
+output "security_group_ids" {
+  value = { for k, sg in aws_security_group.this : k => sg.id }
+}
 ```
 
 ---
@@ -224,36 +325,68 @@ output "ec2_sg_id" { value = aws_security_group.ec2.id }
 
 **Resources this module must manage**:
 
-| Resource | Terraform Type |
-| :--- | :--- |
-| EC2 Instance | `aws_instance` |
-| IAM Role | `aws_iam_role` |
-| IAM Instance Profile | `aws_iam_instance_profile` |
-| IAM Policy Attachment (SSM) | `aws_iam_role_policy_attachment` |
+| Resource | Terraform Type | Scaling |
+| :--- | :--- | :--- |
+| EC2 Instances | `aws_instance` | `for_each` over `var.instances` map keys |
+| IAM Role | `aws_iam_role` | 1 shared role per module call |
+| IAM Instance Profile | `aws_iam_instance_profile` | 1 shared profile per module call |
+| IAM Policy Attachment (SSM) | `aws_iam_role_policy_attachment` | 1 per module call |
 
-**IAM Requirement**: The EC2 instance must be launched with an **IAM instance profile** that attaches the `AmazonSSMManagedInstanceCore` managed policy. This allows connection via Session Manager without a key pair.
+**IAM Requirement**: The EC2 instances must be launched with a **shared IAM instance profile** that attaches the `AmazonSSMManagedInstanceCore` managed policy. This allows connection via Session Manager without a key pair. One IAM role is shared across all instances in the module call — this is best practice (avoid IAM role sprawl).
 
 **Required Variables**:
 
 ```hcl
-variable "ami_id"          { type = string }
-variable "instance_type"   { type = string, default = "t3.micro" }
-variable "subnet_id"       { type = string }
-variable "security_group_ids" { type = list(string) }
 variable "environment"     { type = string }
 variable "tags"            { type = map(string), default = {} }
-variable "user_data"       { type = string, default = "" }
+
+variable "instances" {
+  description = "Map of instances to create. Each key becomes the instance name suffix."
+  type = map(object({
+    ami_id             = string
+    instance_type      = string
+    subnet_id          = string
+    security_group_ids = list(string)
+    user_data          = optional(string, "")
+  }))
+}
+```
+
+> **Scalability**: Define as many EC2 instances as needed (e.g., `web`, `app`, `worker`), each with independent AMI, instance type, subnet placement, and security groups. Adding a new instance is a data change, not a code change.
+
+**`for_each` pattern hint** (in `main.tf`):
+
+```hcl
+resource "aws_instance" "this" {
+  for_each = var.instances
+
+  ami                    = each.value.ami_id
+  instance_type          = each.value.instance_type
+  subnet_id              = each.value.subnet_id
+  vpc_security_group_ids = each.value.security_group_ids
+  iam_instance_profile   = aws_iam_instance_profile.this.name
+  user_data              = each.value.user_data != "" ? each.value.user_data : null
+
+  tags = merge(var.tags, {
+    Name = "${var.environment}-${each.key}"
+  })
+}
 ```
 
 **Required Outputs**:
 
 ```hcl
-output "instance_id"  { value = aws_instance.this.id }
-output "private_ip"   { value = aws_instance.this.private_ip }
+# Returns maps: { "web" = "i-abc...", "app" = "i-def..." }
+output "instance_ids" {
+  value = { for k, inst in aws_instance.this : k => inst.id }
+}
+output "private_ips" {
+  value = { for k, inst in aws_instance.this : k => inst.private_ip }
+}
 output "iam_role_arn" { value = aws_iam_role.this.arn }
 ```
 
-**Constraint**: Do not hardcode any AMI ID or instance type. All values must come from variables.
+**Constraint**: Do not hardcode any AMI ID or instance type. All values must come from the `instances` map.
 
 ---
 
@@ -261,31 +394,69 @@ output "iam_role_arn" { value = aws_iam_role.this.arn }
 
 **Resources this module must manage**:
 
-| Resource | Terraform Type |
-| :--- | :--- |
-| S3 Bucket | `aws_s3_bucket` |
-| Block Public Access | `aws_s3_bucket_public_access_block` |
-| Encryption Config | `aws_s3_bucket_server_side_encryption_configuration` |
-| Versioning Config | `aws_s3_bucket_versioning` |
-| Lifecycle Rule | `aws_s3_bucket_lifecycle_configuration` |
+| Resource | Terraform Type | Scaling |
+| :--- | :--- | :--- |
+| S3 Buckets | `aws_s3_bucket` | `for_each` over `var.buckets` map keys |
+| Block Public Access | `aws_s3_bucket_public_access_block` | `for_each` — 1 per bucket |
+| Encryption Config | `aws_s3_bucket_server_side_encryption_configuration` | `for_each` — 1 per bucket |
+| Versioning Config | `aws_s3_bucket_versioning` | `for_each` — 1 per bucket |
+| Lifecycle Rule | `aws_s3_bucket_lifecycle_configuration` | `for_each` — 1 per bucket |
+| Random ID Suffix | `random_id` | `for_each` — 1 per bucket |
 
 **Required Variables**:
 
 ```hcl
-variable "bucket_name_prefix" { type = string }
-variable "environment"        { type = string }
-variable "versioning_enabled" { type = bool, default = true }
-variable "noncurrent_expiry_days" { type = number, default = 30 }
-variable "tags"               { type = map(string), default = {} }
+variable "environment" { type = string }
+variable "tags"        { type = map(string), default = {} }
+
+variable "buckets" {
+  description = "Map of S3 buckets to create. Each key becomes the bucket name prefix."
+  type = map(object({
+    versioning_enabled     = optional(bool, true)
+    noncurrent_expiry_days = optional(number, 30)
+  }))
+}
 ```
 
-**Design requirement**: The bucket name must be constructed **inside the module** using `"${var.bucket_name_prefix}-${var.environment}-${random_id.suffix.hex}"` to ensure global uniqueness. Add `resource "random_id" "suffix" { byte_length = 4 }` to `main.tf`.
+> **Scalability**: Define as many buckets as needed (e.g., `app-artifacts`, `app-logs`, `backups`), each with independent versioning and lifecycle settings. Adding a new bucket is a data change, not a code change.
+
+**Design requirement**: The bucket name must be constructed **inside the module** using `"${each.key}-${var.environment}-${random_id.suffix[each.key].hex}"` to ensure global uniqueness.
+
+**`for_each` pattern hint** (in `main.tf`):
+
+```hcl
+resource "random_id" "suffix" {
+  for_each    = var.buckets
+  byte_length = 4
+}
+
+resource "aws_s3_bucket" "this" {
+  for_each = var.buckets
+  bucket   = "${each.key}-${var.environment}-${random_id.suffix[each.key].hex}"
+  tags     = merge(var.tags, { Name = "${each.key}-${var.environment}" })
+}
+
+resource "aws_s3_bucket_versioning" "this" {
+  for_each = var.buckets
+  bucket   = aws_s3_bucket.this[each.key].id
+  versioning_configuration {
+    status = each.value.versioning_enabled ? "Enabled" : "Suspended"
+  }
+}
+
+# Repeat for_each pattern for: public_access_block, encryption, lifecycle
+```
 
 **Required Outputs**:
 
 ```hcl
-output "bucket_name" { value = aws_s3_bucket.this.id }
-output "bucket_arn"  { value = aws_s3_bucket.this.arn }
+# Returns maps: { "app-artifacts" = "app-artifacts-dev-a1b2c3d4", ... }
+output "bucket_names" {
+  value = { for k, b in aws_s3_bucket.this : k => b.id }
+}
+output "bucket_arns" {
+  value = { for k, b in aws_s3_bucket.this : k => b.arn }
+}
 ```
 
 ---
@@ -300,9 +471,9 @@ mkdir -p test/vpc && cat > test/vpc/main.tf <<'EOF'
 module "vpc" {
   source               = "../../modules/vpc"
   vpc_cidr             = "10.99.0.0/16"
-  public_subnet_cidrs  = ["10.99.1.0/24", "10.99.3.0/24"]
-  private_subnet_cidrs = ["10.99.2.0/24", "10.99.4.0/24"]
-  availability_zones   = ["us-east-1a", "us-east-1b"]
+  public_subnet_cidrs  = ["10.99.1.0/24", "10.99.3.0/24", "10.99.5.0/24"]
+  private_subnet_cidrs = ["10.99.2.0/24", "10.99.4.0/24", "10.99.6.0/24"]
+  availability_zones   = ["us-east-1a", "us-east-1b", "us-east-1c"]
   environment          = "test"
 }
 EOF
@@ -315,7 +486,38 @@ terraform destroy -auto-approve  # Clean up test resources
 cd ../..
 ```
 
-Repeat for each module. Do not proceed to Phase 2 until all modules pass `terraform validate`.
+> **Scalability test**: The VPC test uses 3 AZs to prove the module scales beyond 2. If you change the lists to 1 or 4 AZs, the plan should still succeed.
+
+Repeat for each module with appropriate scalable inputs:
+
+```bash
+# Security Groups — test with multiple SGs and rules
+mkdir -p test/sg && cat > test/sg/main.tf <<'EOF'
+module "security_groups" {
+  source      = "../../modules/security-groups"
+  vpc_id      = "vpc-test123"  # Use a real VPC ID or run after VPC apply
+  environment = "test"
+  security_groups = {
+    ec2 = {
+      description = "EC2 instances"
+      ingress_rules = [
+        { description = "SSH",  from_port = 22,  to_port = 22,  ip_protocol = "tcp", cidr_ipv4 = "10.0.0.0/8" },
+        { description = "HTTP", from_port = 80,  to_port = 80,  ip_protocol = "tcp", cidr_ipv4 = "0.0.0.0/0" },
+      ]
+    }
+    alb = {
+      description = "Load balancer"
+      ingress_rules = [
+        { description = "HTTP",  from_port = 80,  to_port = 80,  ip_protocol = "tcp", cidr_ipv4 = "0.0.0.0/0" },
+        { description = "HTTPS", from_port = 443, to_port = 443, ip_protocol = "tcp", cidr_ipv4 = "0.0.0.0/0" },
+      ]
+    }
+  }
+}
+EOF
+```
+
+Do not proceed to Phase 2 until all modules pass `terraform validate`.
 
 ---
 
@@ -409,6 +611,8 @@ EOF
 
 #### 2.3 `dev/env.hcl`
 
+This file contains only **shared, environment-level** variables. Resource-specific inputs live in each stack's `terragrunt.hcl`.
+
 ```hcl
 locals {
   environment          = "dev"
@@ -416,7 +620,6 @@ locals {
   public_subnet_cidrs  = ["10.0.1.0/24", "10.0.3.0/24"]
   private_subnet_cidrs = ["10.0.2.0/24", "10.0.4.0/24"]
   availability_zones   = ["us-east-1a", "us-east-1b"]
-  instance_type        = "t3.micro"
   ami_id               = "ami-0c02fb55956c7d316"  # Amazon Linux 2023 us-east-1
 }
 ```
@@ -452,7 +655,7 @@ inputs = {
 
 #### 2.5 `dev/security-groups/terragrunt.hcl`
 
-Use a `dependency` block to receive the VPC ID from the VPC stack. This is the core DRY pattern — no hardcoded VPC IDs.
+Use a `dependency` block to receive the VPC ID from the VPC stack. Resource-specific inputs are defined **directly in this file**, not in `env.hcl`.
 
 ```hcl
 include "root" {
@@ -477,17 +680,29 @@ dependency "vpc" {
 }
 
 inputs = {
-  vpc_id            = dependency.vpc.outputs.vpc_id
-  environment       = local.env.environment
-  allowed_ssh_cidrs = ["10.0.0.0/8"]
+  vpc_id      = dependency.vpc.outputs.vpc_id
+  environment = local.env.environment
+
+  # Define security groups and their rules here
+  security_groups = {
+    ec2 = {
+      description = "EC2 instance traffic"
+      ingress_rules = [
+        { description = "SSH",  from_port = 22, to_port = 22, ip_protocol = "tcp", cidr_ipv4 = "10.0.0.0/8" },
+        { description = "HTTP", from_port = 80, to_port = 80, ip_protocol = "tcp", cidr_ipv4 = "0.0.0.0/0" },
+      ]
+    }
+  }
 }
 ```
+
+> **Scalability**: To add a new SG (e.g., `alb`, `rds`) or new ingress rules, edit this file directly. Each resource stack owns its own input definitions.
 
 ---
 
 #### 2.6 `dev/ec2/terragrunt.hcl`
 
-Use **two** `dependency` blocks — one for the VPC (subnet IDs) and one for the security groups (SG ID).
+Use **two** `dependency` blocks — one for the VPC (subnet IDs) and one for the security groups (SG IDs map). The `instances` map is defined **directly in this file** with dependency outputs resolved inline.
 
 ```hcl
 include "root" {
@@ -514,38 +729,143 @@ dependency "vpc" {
 dependency "security_groups" {
   config_path = "../security-groups"
   mock_outputs = {
-    ec2_sg_id = "sg-00000000000000000"
+    security_group_ids = { ec2 = "sg-00000000000000000" }
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
 
 inputs = {
-  ami_id             = local.env.ami_id
-  instance_type      = local.env.instance_type
-  subnet_id          = dependency.vpc.outputs.private_subnet_ids[0]
-  security_group_ids = [dependency.security_groups.outputs.ec2_sg_id]
-  environment        = local.env.environment
-  user_data          = <<-EOF
-    #!/bin/bash
-    yum update -y
-    yum install -y httpd
-    echo "<h1>IaC Capstone - ${local.env.environment}</h1>" > /var/www/html/index.html
-    systemctl start httpd && systemctl enable httpd
-  EOF
+  environment = local.env.environment
+
+  # Define instances directly in this stack's config
+  instances = {
+    web = {
+      ami_id             = local.env.ami_id
+      instance_type      = "t3.micro"
+      subnet_id          = dependency.vpc.outputs.private_subnet_ids[0]
+      security_group_ids = [dependency.security_groups.outputs.security_group_ids["ec2"]]
+      user_data          = <<-EOF
+        #!/bin/bash
+        yum update -y
+        yum install -y httpd
+        echo "<h1>IaC Capstone - ${local.env.environment} - web</h1>" > /var/www/html/index.html
+        systemctl start httpd && systemctl enable httpd
+      EOF
+    }
+  }
 }
 ```
 
+> **Scalability**: To add more instances, add keys to `instances` directly in this file. Each instance can target a different subnet or security group.
+
 ---
 
-#### 2.7 Task: Wire `prod/` Independently
+#### 2.7 `dev/s3/terragrunt.hcl`
+
+```hcl
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
+locals {
+  env_vars = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+  env      = local.env_vars.locals
+}
+
+terraform {
+  source = "../../../modules//s3"
+}
+
+inputs = {
+  environment = local.env.environment
+
+  # Define buckets directly in this stack's config
+  buckets = {
+    app-artifacts = {
+      versioning_enabled     = true
+      noncurrent_expiry_days = 30
+    }
+  }
+}
+```
+
+> **Scalability**: To add more buckets, add keys to `buckets` directly in this file. S3 has no dependencies on VPC or SGs.
+
+---
+
+#### 2.8 Task: Wire `prod/` Independently
 
 Now replicate the same wiring for `prod/` using `prod/env.hcl` with CIDR `10.1.0.0/16`. The `prod` configs must be **entirely independent** — no dependency or reference to the `dev` stacks.
 
+**`prod/env.hcl`** — only shared, environment-level variables:
+
+```hcl
+locals {
+  environment          = "prod"
+  vpc_cidr             = "10.1.0.0/16"
+  public_subnet_cidrs  = ["10.1.1.0/24", "10.1.3.0/24", "10.1.5.0/24"]
+  private_subnet_cidrs = ["10.1.2.0/24", "10.1.4.0/24", "10.1.6.0/24"]
+  availability_zones   = ["us-east-1a", "us-east-1b", "us-east-1c"]
+  ami_id               = "ami-0c02fb55956c7d316"
+}
+```
+
+Resource-specific inputs are defined in each stack's `terragrunt.hcl`. For example, `prod/ec2/terragrunt.hcl` would define:
+
+```hcl
+# (same dependency blocks as dev/ec2/terragrunt.hcl)
+
+inputs = {
+  environment = local.env.environment
+
+  instances = {
+    web-1 = {
+      ami_id             = local.env.ami_id
+      instance_type      = "t3.small"
+      subnet_id          = dependency.vpc.outputs.private_subnet_ids[0]
+      security_group_ids = [dependency.security_groups.outputs.security_group_ids["ec2"]]
+      user_data          = <<-EOF
+        #!/bin/bash
+        yum update -y && yum install -y httpd
+        echo "<h1>IaC Capstone - prod - web-1</h1>" > /var/www/html/index.html
+        systemctl start httpd && systemctl enable httpd
+      EOF
+    }
+    web-2 = {
+      ami_id             = local.env.ami_id
+      instance_type      = "t3.small"
+      subnet_id          = dependency.vpc.outputs.private_subnet_ids[1]
+      security_group_ids = [dependency.security_groups.outputs.security_group_ids["ec2"]]
+      user_data          = <<-EOF
+        #!/bin/bash
+        yum update -y && yum install -y httpd
+        echo "<h1>IaC Capstone - prod - web-2</h1>" > /var/www/html/index.html
+        systemctl start httpd && systemctl enable httpd
+      EOF
+    }
+  }
+}
+```
+
+And `prod/s3/terragrunt.hcl` would define:
+
+```hcl
+inputs = {
+  environment = local.env.environment
+  buckets = {
+    app-artifacts = { versioning_enabled = true,  noncurrent_expiry_days = 90 }
+    app-logs      = { versioning_enabled = false, noncurrent_expiry_days = 14 }
+  }
+}
+```
+
+> **Key difference**: Prod uses 3 AZs, 2 EC2 instances, an extra HTTPS rule, 2 S3 buckets, and longer lifecycle retention — all configured per resource stack, no code changes.
+>
 > **Validation**: Run `terragrunt run-all validate` from within `infrastructure/dev/` only. Confirm it does not trigger any `prod` runs.
 
 ---
 
-#### 2.8 Deploy Both Environments
+#### 2.9 Deploy Both Environments
 
 ```bash
 # From infrastructure/
@@ -553,6 +873,8 @@ terragrunt run-all apply
 ```
 
 Observe the ordered apply — Terragrunt resolves the dependency graph and applies stacks in the correct order (VPC → SGs → EC2 → S3). Document the apply order from the log.
+
+> **Observe the scaling difference**: Dev should create fewer resources than Prod (fewer subnets, fewer instances, fewer buckets). Both environments use the exact same module code — only each stack's `terragrunt.hcl` differs.
 
 ---
 
@@ -576,8 +898,8 @@ From within `infrastructure/dev/ec2/`:
 # List all resources currently in state
 terragrunt state list
 
-# Show full details of the EC2 resource
-terragrunt state show module.ec2.aws_instance.this
+# Show full details of a specific EC2 instance (note the for_each key)
+terragrunt state show 'module.ec2.aws_instance.this["web"]'
 
 # Pull the raw state file to inspect it
 terragrunt state pull | jq '.resources[].type' | sort | uniq
@@ -592,18 +914,19 @@ terragrunt state pull | jq '.resources[].type' | sort | uniq
 
 #### 3.2 State Move (Refactoring)
 
-Imagine the IaC team decided to rename the EC2 Terraform module's internal resource from `aws_instance.this` to `aws_instance.main`. Without a `state mv`, Terraform would destroy and recreate the instance.
+Imagine the IaC team decided to rename the EC2 Terraform module's internal resource from `aws_instance.this` to `aws_instance.main`. Without a `state mv`, Terraform would destroy and recreate the instances.
 
 **Simulate this refactor**:
 
 1. In your module's `main.tf`, rename `resource "aws_instance" "this"` → `resource "aws_instance" "main"`.
 2. Update all references (`outputs.tf`, etc.) to use `aws_instance.main`.
-3. **Before** running plan, move the state:
+3. **Before** running plan, move the state for **each keyed instance**:
    ```bash
    terragrunt state mv \
-     module.ec2.aws_instance.this \
-     module.ec2.aws_instance.main
+     'module.ec2.aws_instance.this["web"]' \
+     'module.ec2.aws_instance.main["web"]'
    ```
+   > Repeat for every key in your `instances` map.
 4. Run `terragrunt plan`. Confirm output shows: `No changes. Your infrastructure matches the configuration.`
 5. Rename back (`main` → `this`) and perform the `state mv` in reverse.
 
@@ -772,15 +1095,15 @@ aws s3 rb s3://iac-capstone-tfstate-[yourname]
 
 | # | Deliverable | Description |
 | :--: | :--- | :--- |
-| 1 | `modules/vpc/` | Fully authored VPC module with `for_each`/`count` for subnets |
-| 2 | `modules/security-groups/` | SG module using separate ingress/egress rule resources |
-| 3 | `modules/ec2/` | EC2 module with IAM role + SSM instance profile |
-| 4 | `modules/s3/` | S3 module with encryption, versioning, lifecycle, and random suffix |
-| 5 | Module Validation Logs | `terraform validate` + `terraform plan` passing for each module in isolation |
-| 6 | `infrastructure/` (Git repo) | Full DRY Terragrunt tree with `dependency` blocks wiring all outputs |
-| 7 | `terragrunt run-all apply` Log | Successful ordered apply across both environments |
-| 8 | State Deep Dive Answers | Answers to §3.1 Q1–Q3 with CLI output |
-| 9 | `state mv` + "No changes" Log | §3.2 state move + plan confirming no resource replacement |
+| 1 | `modules/vpc/` | Fully authored VPC module with `for_each` for dynamic subnets |
+| 2 | `modules/security-groups/` | SG module using nested `for_each` — multiple SGs with dynamic ingress rules |
+| 3 | `modules/ec2/` | EC2 module with `for_each` instances + shared IAM role + SSM instance profile |
+| 4 | `modules/s3/` | S3 module with `for_each` buckets, encryption, versioning, lifecycle, and random suffix |
+| 5 | Module Validation Logs | `terraform validate` + `terraform plan` passing for each module with scalable inputs |
+| 6 | `infrastructure/` (Git repo) | Full DRY Terragrunt tree with `dependency` blocks wiring all map-based outputs |
+| 7 | `terragrunt run-all apply` Log | Successful ordered apply across both environments (dev = fewer resources, prod = more) |
+| 8 | State Deep Dive Answers | Answers to §3.1 Q1–Q3 with CLI output (note `for_each`-keyed resource addresses) |
+| 9 | `state mv` + "No changes" Log | §3.2 state move of keyed resources + plan confirming no resource replacement |
 | 10 | Force-Unlock Log | §3.3 lock error message + `force-unlock` command + successful plan |
 | 11 | State Corrupt & Recovery Log | §3.4 corrupted plan (showing re-create) + recovered plan (No changes) |
 | 12 | `policy_check.sh` | Script that detects destroy actions + proof it fails on a destructive plan |
