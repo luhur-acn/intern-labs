@@ -639,7 +639,7 @@ locals {
 }
 
 terraform {
-  source = "../../../modules//vpc"
+  source = "../../modules//vpc"
 }
 
 inputs = {
@@ -668,7 +668,7 @@ locals {
 }
 
 terraform {
-  source = "../../../modules//security-groups"
+  source = "../../modules//security-groups"
 }
 
 dependency "vpc" {
@@ -715,7 +715,7 @@ locals {
 }
 
 terraform {
-  source = "../../../modules//ec2"
+  source = "../../modules//ec2"
 }
 
 dependency "vpc" {
@@ -773,7 +773,7 @@ locals {
 }
 
 terraform {
-  source = "../../../modules//s3"
+  source = "../../modules//s3"
 }
 
 inputs = {

@@ -481,13 +481,18 @@ infrastructure/
 
 | Resource | Terraform Type | Scaling |
 | :--- | :--- | :--- |
-| VPC | `aws_vpc` | 1 per module call |
-| Internet Gateway | `aws_internet_gateway` | 1 per module call |
+| VPC | `aws_vpc` | `for_each` over `var.vpcs` map |
+| Internet Gateway | `aws_internet_gateway` | `for_each` over `var.vpcs` |
 
 **Required Variables** (`variables.tf`):
 
 ```hcl
-variable "vpc_cidr"     { type = string }
+variable "vpcs" {
+  type = map(object({
+    cidr_block = string
+    enable_igw = optional(bool, true)
+  }))
+}
 variable "environment"  { type = string }
 variable "tags"         { type = map(string), default = {} }
 ```
@@ -495,8 +500,8 @@ variable "tags"         { type = map(string), default = {} }
 **Required Outputs** (`outputs.tf`):
 
 ```hcl
-output "vpc_id"  { value = aws_vpc.this.id }
-output "igw_id"  { value = aws_internet_gateway.this.id }
+output "vpc_ids" { value = { for k, v in aws_vpc.this : k => v.id } }
+output "igw_ids" { value = { for k, v in aws_internet_gateway.this : k => v.id } }
 ```
 
 ---
@@ -649,7 +654,7 @@ output "iam_role_arn" { value = aws_iam_role.this.arn }
 
 | Resource | Terraform Type | Scaling |
 | :--- | :--- | :--- |
-| Application Load Balancer | `aws_lb` | 1 per module call |
+| Application Load Balancer | `aws_lb` | `for_each` over `var.albs` map |
 | Target Groups | `aws_lb_target_group` | `for_each` over `var.target_groups` map |
 | Target Group Attachments | `aws_lb_target_group_attachment` | `for_each` over `var.target_group_attachments` map |
 | Listeners | `aws_lb_listener` | `for_each` over `var.listeners` map |
@@ -658,24 +663,28 @@ output "iam_role_arn" { value = aws_iam_role.this.arn }
 
 ```hcl
 variable "environment"        { type = string }
-variable "name"               { type = string }
 variable "vpc_id"             { type = string }
-variable "subnet_ids"         { type = list(string) }
-variable "security_group_ids" { type = list(string) }
 variable "tags"               { type = map(string), default = {} }
 
-variable "target_groups" {
-  description = "Map of target groups to create."
+variable "albs" {
   type = map(object({
-    port        = number
-    protocol    = string
-    target_type = string
+    internal           = optional(bool, false)
+    security_group_ids = list(string)
+    subnet_ids         = list(string)
+  }))
+}
+
+variable "target_groups" {
+  type = map(object({
+    alb_key           = string
+    port              = number
+    protocol          = string
+    target_type       = string
     health_check_path = optional(string, "/")
   }))
 }
 
 variable "target_group_attachments" {
-  description = "Map of target group attachments."
   type = map(object({
     target_group_key = string
     target_id        = string
@@ -685,8 +694,8 @@ variable "target_group_attachments" {
 }
 
 variable "listeners" {
-  description = "Map of listeners to create."
   type = map(object({
+    alb_key          = string
     port             = number
     protocol         = string
     target_group_key = string
@@ -694,13 +703,13 @@ variable "listeners" {
 }
 ```
 
-> **Scalability**: Add more target groups, listeners, or attachments by adding keys to the respective maps.
+> **Scalability**: Add more ALBs, target groups, listeners, or attachments by adding keys to the respective maps. Each TG and Listener must specify an `alb_key` to associate with the correct load balancer.
 
 **Required Outputs**:
 
 ```hcl
-output "alb_arn"  { value = aws_lb.this.arn }
-output "alb_dns"  { value = aws_lb.this.dns_name }
+output "alb_arns" { value = { for k, v in aws_lb.this : k => v.arn } }
+output "alb_dns_names" { value = { for k, v in aws_lb.this : k => v.dns_name } }
 output "target_group_arns" {
   value = { for k, tg in aws_lb_target_group.this : k => tg.arn }
 }
@@ -717,8 +726,7 @@ output "listener_arns" {
 
 | Resource | Terraform Type | Scaling |
 | :--- | :--- | :--- |
-| Network Load Balancer | `aws_lb` | 1 per module call |
-| Elastic IP | `aws_eip` | `for_each` over `var.eips` (keyed per subnet) |
+| Network Load Balancer | `aws_lb` | `for_each` over `var.nlbs` map |
 | Target Groups | `aws_lb_target_group` | `for_each` over `var.target_groups` map |
 | Target Group Attachments | `aws_lb_target_group_attachment` | `for_each` over `var.target_group_attachments` map |
 | Listeners | `aws_lb_listener` | `for_each` over `var.listeners` map |
@@ -727,21 +735,22 @@ output "listener_arns" {
 
 ```hcl
 variable "environment"  { type = string }
-variable "name"         { type = string }
 variable "vpc_id"       { type = string }
 variable "tags"         { type = map(string), default = {} }
 
-variable "subnet_mappings" {
-  description = "Map of subnet mappings with EIP allocation IDs."
+variable "nlbs" {
   type = map(object({
-    subnet_id     = string
-    allocation_id = string
+    internal           = optional(bool, false)
+    subnet_mappings    = map(object({
+      subnet_id     = string
+      allocation_id = string
+    }))
   }))
 }
 
 variable "target_groups" {
-  description = "Map of target groups to create."
   type = map(object({
+    nlb_key     = string
     port        = number
     protocol    = string
     target_type = string
@@ -749,7 +758,6 @@ variable "target_groups" {
 }
 
 variable "target_group_attachments" {
-  description = "Map of target group attachments."
   type = map(object({
     target_group_key = string
     target_id        = string
@@ -759,8 +767,8 @@ variable "target_group_attachments" {
 }
 
 variable "listeners" {
-  description = "Map of listeners to create."
   type = map(object({
+    nlb_key          = string
     port             = number
     protocol         = string
     target_group_key = string
@@ -771,11 +779,8 @@ variable "listeners" {
 **Required Outputs**:
 
 ```hcl
-output "nlb_arn"  { value = aws_lb.this.arn }
-output "nlb_dns"  { value = aws_lb.this.dns_name }
-output "eip_ids" {
-  value = { for k, eip in aws_eip.this : k => eip.id }
-}
+output "nlb_arns" { value = { for k, v in aws_lb.this : k => v.arn } }
+output "nlb_dns_names" { value = { for k, v in aws_lb.this : k => v.dns_name } }
 output "target_group_arns" {
   value = { for k, tg in aws_lb_target_group.this : k => tg.arn }
 }
@@ -853,7 +858,7 @@ locals {
 }
 
 terraform {
-  source = "../../../modules//vpc"
+  source = "../../modules//vpc"
 }
 
 inputs = {
@@ -877,7 +882,7 @@ locals {
 }
 
 terraform {
-  source = "../../../modules//ec2"
+  source = "../../modules//ec2"
 }
 
 dependency "subnets" {
@@ -939,12 +944,12 @@ Each `terragrunt.hcl` must have a sibling `import.tf` file. Use the IDs from `di
 **Example `dev/vpc/import.tf`:**
 ```hcl
 import {
-  to = module.vpc.aws_vpc.this
+  to = module.vpc.aws_vpc.this["main"]
   id = "vpc-xxxxxxxxxxxxxxxxx"
 }
 
 import {
-  to = module.vpc.aws_internet_gateway.this
+  to = module.vpc.aws_internet_gateway.this["main"]
   id = "igw-xxxxxxxxxxxxxxxxx"
 }
 ```
@@ -1157,7 +1162,7 @@ For each resource type below, run the CLI command and compare the output against
 **VPC:**
 ```bash
 # Get CIDR from state
-terragrunt state show module.vpc.aws_vpc.this | grep cidr_block
+terragrunt state show 'module.vpc.aws_vpc.this["main"]' | grep cidr_block
 
 # Compare against live reality
 aws ec2 describe-vpcs --vpc-ids vpc-xxxxxx --query "Vpcs[0].CidrBlock"
