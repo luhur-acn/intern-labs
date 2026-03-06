@@ -24,12 +24,33 @@ inputs = {
   environment = local.env.environment
 
   security_groups = {
-    ec2 = {
-      description = "EC2 instance traffic"
+    nlb = {
+      description = "NLB security group"
       ingress_rules = [
-        { description = "SSH",   from_port = 22, to_port = 22, ip_protocol = "tcp", cidr_ipv4 = "10.0.0.0/8" },
-        { description = "HTTP",  from_port = 80, to_port = 80, ip_protocol = "tcp", cidr_ipv4 = "0.0.0.0/0" },
-        { description = "HTTPS", from_port = 443, to_port = 443, ip_protocol = "tcp", cidr_ipv4 = "0.0.0.0/0" },
+        { description = "HTTP from internet", from_port = 80, to_port = 80, ip_protocol = "tcp", cidr_ipv4 = "0.0.0.0/0" }
+      ]
+      egress_rules = [
+        { description = "Allow all outbound", from_port = 0, to_port = 0, ip_protocol = "-1", cidr_ipv4 = "0.0.0.0/0" }
+      ]
+    }
+    alb = {
+      description = "ALB security group"
+      ingress_rules = [
+        { description = "HTTP from NLB", from_port = 80, to_port = 80, ip_protocol = "tcp", referenced_sg_key = "nlb" },
+        { description = "HTTPS from internet", from_port = 443, to_port = 443, ip_protocol = "tcp", cidr_ipv4 = "0.0.0.0/0" }
+      ]
+      egress_rules = [
+        { description = "HTTP to EC2", from_port = 80, to_port = 80, ip_protocol = "tcp", referenced_sg_key = "ec2" }
+      ]
+    }
+    ec2 = {
+      description = "EC2 instances security group"
+      ingress_rules = [
+        { description = "HTTP from ALB", from_port = 80, to_port = 80, ip_protocol = "tcp", referenced_sg_key = "alb" },
+        { description = "SSH from internal", from_port = 22, to_port = 22, ip_protocol = "tcp", cidr_ipv4 = "10.0.0.0/8" }
+      ]
+      egress_rules = [
+        { description = "Allow all outbound", from_port = 0, to_port = 0, ip_protocol = "-1", cidr_ipv4 = "0.0.0.0/0" }
       ]
     }
   }
