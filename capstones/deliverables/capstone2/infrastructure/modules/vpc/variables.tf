@@ -23,6 +23,11 @@ variable "environment" {
   type        = string
 }
 
+variable "region" {
+  description = "AWS region"
+  type        = string
+}
+
 variable "tags" {
   description = "Additional tags for all resources"
   type        = map(string)
