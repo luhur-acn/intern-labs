@@ -12,8 +12,6 @@ terraform {
 }
 
 inputs = {
-  environment = local.env.environment
-
   buckets = {
     app-artifacts = {
       versioning_enabled     = true

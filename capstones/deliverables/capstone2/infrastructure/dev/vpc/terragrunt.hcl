@@ -16,5 +16,4 @@ inputs = {
   public_subnet_cidrs  = local.env.public_subnet_cidrs
   private_subnet_cidrs = local.env.private_subnet_cidrs
   availability_zones   = local.env.availability_zones
-  environment          = local.env.environment
 }

@@ -21,7 +21,6 @@ dependency "vpc" {
 
 inputs = {
   vpc_id      = dependency.vpc.outputs.vpc_id
-  environment = local.env.environment
 
   security_groups = {
     nlb = {

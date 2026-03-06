@@ -28,8 +28,6 @@ dependency "security_groups" {
 }
 
 inputs = {
-  environment = local.env.environment
-
   instances = {
     web-1 = {
       ami_id             = local.env.ami_id

@@ -38,3 +38,13 @@ provider "aws" {
 provider "random" {}
 EOF
 }
+
+inputs = {
+  region      = local.region
+  environment = local.environment
+  tags = {
+    Project     = local.project
+    Environment = local.environment
+    ManagedBy   = "Terragrunt"
+  }
+}
