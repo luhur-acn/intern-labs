@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-BUCKET_NAME="iac-capstone-tfstate-justo"
+BUCKET_NAME="iac-capstone-tfstate-justo1"
 REGION="us-east-1"
 
 echo "[1/3] Creating S3 Bucket: ${BUCKET_NAME}..."

@@ -1,0 +1,3 @@
+14:19:38.708 STDOUT terraform: No changes. Your infrastructure matches the configuration.
+14:19:38.709 STDOUT terraform: Terraform has compared your real infrastructure against your configuration
+14:19:38.710 STDOUT terraform: and found no differences, so no changes are needed.
