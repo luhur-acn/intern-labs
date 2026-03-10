@@ -1,0 +1,220 @@
+{
+  "discovery_timestamp": "2026-03-10T14:12:46.337162",
+  "region": "us-east-1",
+  "dev": {
+    "vpc": {
+      "id": "vpc-0ddbf980fe31ea317",
+      "cidr": "10.0.0.0/16",
+      "igw_id": "igw-0aa4301115a79aa33",
+      "nat_gateway_id": "nat-00e0f3582f9b38ab1"
+    },
+    "subnets": [
+      {
+        "id": "subnet-005c6553c7856be3a",
+        "cidr": "10.0.4.0/24",
+        "type": "private",
+        "az": "us-east-1b",
+        "name": "dev-private-subnet-b"
+      },
+      {
+        "id": "subnet-0ffcaca8215a0dbb9",
+        "cidr": "10.0.2.0/24",
+        "type": "private",
+        "az": "us-east-1a",
+        "name": "dev-private-subnet-a"
+      },
+      {
+        "id": "subnet-031554c80d082ad50",
+        "cidr": "10.0.1.0/24",
+        "type": "public",
+        "az": "us-east-1a",
+        "name": "dev-public-subnet-a"
+      },
+      {
+        "id": "subnet-09774a5e6cd4fc675",
+        "cidr": "10.0.3.0/24",
+        "type": "public",
+        "az": "us-east-1b",
+        "name": "dev-public-subnet-b"
+      }
+    ],
+    "route_tables": [
+      {
+        "id": "rtb-06f3d0cfe6604d6e0",
+        "type": "private",
+        "routes": [
+          {
+            "dest": "10.0.0.0/16",
+            "target": "local"
+          },
+          {
+            "dest": "0.0.0.0/0",
+            "target": "nat-00e0f3582f9b38ab1"
+          }
+        ]
+      },
+      {
+        "id": "rtb-0e168d54936861198",
+        "type": "public",
+        "routes": [
+          {
+            "dest": "10.0.0.0/16",
+            "target": "local"
+          },
+          {
+            "dest": "0.0.0.0/0",
+            "target": "igw-0aa4301115a79aa33"
+          }
+        ]
+      }
+    ],
+    "ec2": {
+      "id": "i-0fb7d369ebf2ab629",
+      "private_ip": "10.0.2.203",
+      "security_group_id": "sg-009e9c8553da9e963",
+      "inbound_rules": [
+        {
+          "port": 80,
+          "source_sg": "sg-017d13c99a80bd702",
+          "source_cidr": null
+        },
+        {
+          "port": 22,
+          "source_sg": null,
+          "source_cidr": "10.0.0.0/8"
+        }
+      ]
+    },
+    "alb": {
+      "arn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:loadbalancer/app/capstone-dev-alb/7b8f997e3281df31",
+      "dns": "capstone-dev-alb-1224047828.us-east-1.elb.amazonaws.com",
+      "target_group_arn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:targetgroup/capstone-dev-ec2-tg/501bc5f4abad4abd",
+      "target_health": "healthy",
+      "listener_arn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:listener/app/capstone-dev-alb/7b8f997e3281df31/ac5c066dfc7b5211"
+    },
+    "nlb": {
+      "arn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:loadbalancer/net/capstone-dev-nlb/c5d1c2f90e92dd0f",
+      "dns": "capstone-dev-nlb-c5d1c2f90e92dd0f.elb.us-east-1.amazonaws.com",
+      "target_group_arn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:targetgroup/capstone-dev-alb-tg/137e1d66e6eec000",
+      "target_health": "healthy",
+      "eip_allocation_id": "eipalloc-002fe8d433de03296"
+    },
+    "s3": {
+      "name": "capstone-dev-justo-65usqy",
+      "arn": "arn:aws:s3:::capstone-dev-justo-65usqy",
+      "encrypted": true,
+      "versioning": true
+    }
+  },
+  "prod": {
+    "vpc": {
+      "id": "vpc-0cf94bd10f9fc9222",
+      "cidr": "10.1.0.0/16",
+      "igw_id": "igw-098addb73a8c668b5",
+      "nat_gateway_id": "nat-0e225dce442b44cd1"
+    },
+    "subnets": [
+      {
+        "id": "subnet-0e593f7eaa2d2016c",
+        "cidr": "10.1.2.0/24",
+        "type": "private",
+        "az": "us-east-1a",
+        "name": "prod-private-subnet-a"
+      },
+      {
+        "id": "subnet-00bddfb99c41f5662",
+        "cidr": "10.1.3.0/24",
+        "type": "public",
+        "az": "us-east-1b",
+        "name": "prod-public-subnet-b"
+      },
+      {
+        "id": "subnet-06704318baaea8db9",
+        "cidr": "10.1.4.0/24",
+        "type": "private",
+        "az": "us-east-1b",
+        "name": "prod-private-subnet-b"
+      },
+      {
+        "id": "subnet-0900246b045e1f9b8",
+        "cidr": "10.1.1.0/24",
+        "type": "public",
+        "az": "us-east-1a",
+        "name": "prod-public-subnet-a"
+      }
+    ],
+    "route_tables": [
+      {
+        "id": "rtb-009ea3548b0267829",
+        "type": "private",
+        "routes": [
+          {
+            "dest": "10.1.0.0/16",
+            "target": "local"
+          },
+          {
+            "dest": "0.0.0.0/0",
+            "target": "nat-0e225dce442b44cd1"
+          }
+        ]
+      },
+      {
+        "id": "rtb-06876841cb130a61e",
+        "type": "public",
+        "routes": [
+          {
+            "dest": "10.1.0.0/16",
+            "target": "local"
+          },
+          {
+            "dest": "0.0.0.0/0",
+            "target": "igw-098addb73a8c668b5"
+          }
+        ]
+      }
+    ],
+    "ec2": {
+      "id": "i-06772fc880feda285",
+      "private_ip": "10.1.2.225",
+      "security_group_id": "sg-0adfc66837d2f7e9b",
+      "inbound_rules": [
+        {
+          "port": 80,
+          "source_sg": "sg-09c91c5dded17c262",
+          "source_cidr": null
+        },
+        {
+          "port": 22,
+          "source_sg": null,
+          "source_cidr": "10.0.0.0/8"
+        }
+      ]
+    },
+    "alb": {
+      "arn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:loadbalancer/app/capstone-prod-alb/299b00532535abe9",
+      "dns": "capstone-prod-alb-830424362.us-east-1.elb.amazonaws.com",
+      "target_group_arn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:targetgroup/capstone-prod-ec2-tg/7ecdfd7d45c73f85",
+      "target_health": "healthy",
+      "listener_arn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:listener/app/capstone-prod-alb/299b00532535abe9/e4c29992de973c44"
+    },
+    "nlb": {
+      "arn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:loadbalancer/net/capstone-prod-nlb/461346a62d6d76ef",
+      "dns": "capstone-prod-nlb-461346a62d6d76ef.elb.us-east-1.amazonaws.com",
+      "target_group_arn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:targetgroup/capstone-prod-alb-tg/4762d56104a3b519",
+      "target_health": "healthy",
+      "eip_allocation_id": "eipalloc-0221987366f4278a9"
+    },
+    "s3": {
+      "name": "capstone-prod-justo-qg13vt",
+      "arn": "arn:aws:s3:::capstone-prod-justo-qg13vt",
+      "encrypted": true,
+      "versioning": true
+    }
+  },
+  "tfstate_bucket": {
+    "name": "capstone-tfstate-justo-yi5fsz",
+    "arn": "arn:aws:s3:::capstone-tfstate-justo-yi5fsz",
+    "encrypted": true,
+    "versioning": true
+  }
+}
