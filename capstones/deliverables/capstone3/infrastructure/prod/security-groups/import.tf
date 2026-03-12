@@ -1,24 +1,34 @@
 import {
   to = aws_security_group.this["alb"]
-  id = "sg-09c91c5dded17c262"
+  id = "sg-0f8ba3ec56840a5b7"
 }
 
 import {
   to = aws_security_group.this["ec2"]
-  id = "sg-0adfc66837d2f7e9b"
+  id = "sg-0851f8a754a786298"
 }
 
 import {
   to = aws_vpc_security_group_ingress_rule.this["alb-ingress-0"]
-  id = "sgr-0d2f7f0e497c22ab6"
+  id = "sgr-06d446bf278901405"
 }
 
 import {
   to = aws_vpc_security_group_ingress_rule.this["ec2-ingress-0"]
-  id = "sgr-08ed81487396557b9"
+  id = "sgr-07d0f47713450453a"
 }
 
 import {
   to = aws_vpc_security_group_ingress_rule.this["ec2-ingress-1"]
-  id = "sgr-0ff9e64ae284d95b8"
+  id = "sgr-0e6d296adfc691e77"
+}
+
+import {
+  to = aws_vpc_security_group_egress_rule.all["alb"]
+  id = "sgr-0f282e1144731503b"
+}
+
+import {
+  to = aws_vpc_security_group_egress_rule.all["ec2"]
+  id = "sgr-0a2546b096090cce7"
 }

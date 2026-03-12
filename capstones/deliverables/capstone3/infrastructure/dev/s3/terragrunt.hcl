@@ -14,7 +14,7 @@ terraform {
 inputs = {
   environment = local.env.environment
   buckets = {
-    "capstone-dev-justo-65usqy" = {
+    "capstone-dev-justo-sa4wv4" = {
       versioning_enabled = true
     }
   }

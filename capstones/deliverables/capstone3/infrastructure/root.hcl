@@ -16,18 +16,18 @@ generate "provider" {
   contents  = <<EOF
 provider "aws" {
   region = "${local.region}"
-  default_tags {
-    tags = {
-      Project     = "${local.project}"
-      Environment = "${local.env}"
-      ManagedBy   = "Terragrunt"
-    }
-  }
 }
 EOF
 }
 
-# Remote state management (S3 + DynamoDB)
+  # default_tags {
+  #   tags = {
+  #     Project     = "${local.project}"
+  #     Environment = "${local.env}"
+  #     # ManagedBy   = "Terragrunt"
+  #   }
+  # }
+# Remote state management (S3 with Native Locking)
 remote_state {
   backend = "s3"
   generate = {
@@ -35,10 +35,10 @@ remote_state {
     if_exists = "overwrite_terragrunt"
   }
   config = {
-    bucket         = "capstone-tfstate-justo-yi5fsz"
-    key            = "${local.project}/${local.env}/${path_relative_to_include()}/terraform.tfstate"
-    region         = local.region
-    encrypt        = true
-    dynamodb_table = "terraform-lock-table"
+    bucket       = "capstone-tfstate-justo-mvko2k"
+    key          = "${local.project}/${local.env}/${path_relative_to_include()}/terraform.tfstate"
+    region       = local.region
+    encrypt      = true
+    use_lockfile = true
   }
 }

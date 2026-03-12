@@ -3,6 +3,8 @@ import time
 import random
 import string
 import sys
+import json
+import os
 from botocore.exceptions import ClientError
 
 # Configuration
@@ -13,6 +15,13 @@ PROJECT = "capstone"
 ec2 = boto3.client('ec2', region_name=REGION)
 elbv2 = boto3.client('elbv2', region_name=REGION)
 s3 = boto3.client('s3', region_name=REGION)
+
+# Discovery storage
+discovery_data = {
+    "dev": {},
+    "prod": {},
+    "storage": {}
+}
 
 def get_random_string(length=6):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
@@ -45,6 +54,7 @@ def create_tags(resource_id, name, env):
 
 def setup_environment(env, vpc_cidr, pub_a_cidr, pub_b_cidr, priv_a_cidr, priv_b_cidr):
     print(f"\n🚀 --- Building {env.upper()} Environment ---")
+    data = {}
     
     try:
         # 1. VPC
@@ -59,6 +69,8 @@ def setup_environment(env, vpc_cidr, pub_a_cidr, pub_b_cidr, priv_a_cidr, priv_b
             print(f"✅ Created VPC: {vpc_id}")
         else:
             print(f"⏩ VPC {vpc_id} already exists.")
+        data['vpc_id'] = vpc_id
+        data['vpc_cidr'] = vpc_cidr
 
         # 2. Internet Gateway
         igws = ec2.describe_internet_gateways(Filters=[{'Name': 'attachment.vpc-id', 'Values': [vpc_id]}])['InternetGateways']
@@ -71,6 +83,7 @@ def setup_environment(env, vpc_cidr, pub_a_cidr, pub_b_cidr, priv_a_cidr, priv_b
         else:
             igw_id = igws[0]['InternetGatewayId']
             print(f"⏩ IGW {igw_id} exists.")
+        data['igw_id'] = igw_id
 
         # 3. Subnets
         def get_or_create_sub(cidr, az, name, is_public=False):
@@ -85,25 +98,32 @@ def setup_environment(env, vpc_cidr, pub_a_cidr, pub_b_cidr, priv_a_cidr, priv_b
             
             if is_public:
                 ec2.modify_subnet_attribute(SubnetId=s_id, MapPublicIpOnLaunch={'Value': True})
-                print(f"  🔹 Enabled Auto-assign IP for {name}")
             return s_id
 
-        sub_pub_a = get_or_create_sub(pub_a_cidr, f"{REGION}a", f"{env}-public-subnet-a", True)
-        sub_pub_b = get_or_create_sub(pub_b_cidr, f"{REGION}b", f"{env}-public-subnet-b", True)
-        sub_priv_a = get_or_create_sub(priv_a_cidr, f"{REGION}a", f"{env}-private-subnet-a", False)
-        sub_priv_b = get_or_create_sub(priv_b_cidr, f"{REGION}b", f"{env}-private-subnet-b", False)
+        data['subnets'] = {
+            'public-a': get_or_create_sub(pub_a_cidr, f"{REGION}a", f"{env}-public-subnet-a", True),
+            'public-b': get_or_create_sub(pub_b_cidr, f"{REGION}b", f"{env}-public-subnet-b", True),
+            'private-a': get_or_create_sub(priv_a_cidr, f"{REGION}a", f"{env}-private-subnet-a", False),
+            'private-b': get_or_create_sub(priv_b_cidr, f"{REGION}b", f"{env}-private-subnet-b", False)
+        }
 
         # 4. NAT Gateway
         nats = ec2.describe_nat_gateways(Filters=[{'Name': 'vpc-id', 'Values': [vpc_id]}, {'Name': 'state', 'Values': ['pending', 'available']}])['NatGateways']
         if not nats:
-            eip_nat = ec2.allocate_address(Domain='vpc')['AllocationId']
-            nat_gw = ec2.create_nat_gateway(SubnetId=sub_pub_a, AllocationId=eip_nat)
+            eip_nat = ec2.allocate_address(Domain='vpc')
+            eip_alloc_id = eip_nat['AllocationId']
+            data['nat_eip_id'] = eip_alloc_id
+            nat_gw = ec2.create_nat_gateway(SubnetId=data['subnets']['public-a'], AllocationId=eip_alloc_id)
             nat_gw_id = nat_gw['NatGateway']['NatGatewayId']
             create_tags(nat_gw_id, f"{env}-nat-gw", env)
             wait_for_nat_gw(nat_gw_id)
         else:
             nat_gw_id = nats[0]['NatGatewayId']
+            eip_alloc_id = nats[0]['NatGatewayAddresses'][0]['AllocationId']
             print(f"⏩ NAT Gateway {nat_gw_id} exists.")
+        
+        data['nat_gw_id'] = nat_gw_id
+        data['nat_eip_id'] = eip_alloc_id
 
         # 5. Route Tables
         def get_or_create_rt(name, target_id, is_igw=True):
@@ -120,13 +140,16 @@ def setup_environment(env, vpc_cidr, pub_a_cidr, pub_b_cidr, priv_a_cidr, priv_b
             print(f"✅ Created RT: {name}")
             return rt
 
-        rt_pub = get_or_create_rt(f"{env}-public-rt", igw_id, True)
-        ec2.associate_route_table(RouteTableId=rt_pub, SubnetId=sub_pub_a)
-        ec2.associate_route_table(RouteTableId=rt_pub, SubnetId=sub_pub_b)
-
-        rt_priv = get_or_create_rt(f"{env}-private-rt", nat_gw_id, False)
-        ec2.associate_route_table(RouteTableId=rt_priv, SubnetId=sub_priv_a)
-        ec2.associate_route_table(RouteTableId=rt_priv, SubnetId=sub_priv_b)
+        data['route_tables'] = {
+            'public': get_or_create_rt(f"{env}-public-rt", igw_id, True),
+            'private': get_or_create_rt(f"{env}-private-rt", nat_gw_id, False)
+        }
+        
+        # Associations
+        for sub_key in ['public-a', 'public-b']:
+            ec2.associate_route_table(RouteTableId=data['route_tables']['public'], SubnetId=data['subnets'][sub_key])
+        for sub_key in ['private-a', 'private-b']:
+            ec2.associate_route_table(RouteTableId=data['route_tables']['private'], SubnetId=data['subnets'][sub_key])
 
         # 6. Security Groups
         def get_or_create_sg(name, desc):
@@ -139,17 +162,21 @@ def setup_environment(env, vpc_cidr, pub_a_cidr, pub_b_cidr, priv_a_cidr, priv_b
             print(f"✅ Created SG: {name}")
             return sg
 
-        alb_sg = get_or_create_sg(f"capstone-{env}-alb-sg", f"ALB SG for {env}")
+        data['security_groups'] = {
+            'alb': get_or_create_sg(f"capstone-{env}-alb-sg", f"ALB SG for {env}"),
+            'ec2': get_or_create_sg(f"capstone-{env}-ec2-sg", f"EC2 SG for {env}")
+        }
+
+        # SG Rules Inbound
         try:
-            ec2.authorize_security_group_ingress(GroupId=alb_sg, IpProtocol='tcp', FromPort=80, ToPort=80, CidrIp='0.0.0.0/0')
+            ec2.authorize_security_group_ingress(GroupId=data['security_groups']['alb'], IpProtocol='tcp', FromPort=80, ToPort=80, CidrIp='0.0.0.0/0')
         except ClientError: pass
 
-        ec2_sg = get_or_create_sg(f"capstone-{env}-ec2-sg", f"EC2 SG for {env}")
         try:
             ec2.authorize_security_group_ingress(
-                GroupId=ec2_sg,
+                GroupId=data['security_groups']['ec2'],
                 IpPermissions=[
-                    {'IpProtocol': 'tcp', 'FromPort': 80, 'ToPort': 80, 'UserIdGroupPairs': [{'GroupId': alb_sg}]},
+                    {'IpProtocol': 'tcp', 'FromPort': 80, 'ToPort': 80, 'UserIdGroupPairs': [{'GroupId': data['security_groups']['alb']}]},
                     {'IpProtocol': 'tcp', 'FromPort': 22, 'ToPort': 22, 'IpRanges': [{'CidrIp': '10.0.0.0/8'}]}
                 ]
             )
@@ -158,97 +185,129 @@ def setup_environment(env, vpc_cidr, pub_a_cidr, pub_b_cidr, priv_a_cidr, priv_b
         # 7. EC2 Instance
         insts = ec2.describe_instances(Filters=[{'Name': 'vpc-id', 'Values': [vpc_id]}, {'Name': 'tag:Name', 'Values': [f"web-{env}"]}, {'Name': 'instance-state-name', 'Values': ['running', 'pending']}])['Reservations']
         if not insts:
-            user_data = f"""#!/bin/bash
-yum update -y; yum install -y httpd
-echo "<h1>Capstone {env.upper()} Server - $(hostname -f)</h1>" > /var/www/html/index.html
-systemctl start httpd; systemctl enable httpd
-"""
-            instance_id = ec2.run_instances(ImageId='ami-0c02fb55956c7d316', InstanceType='t3.micro', MinCount=1, MaxCount=1, SubnetId=sub_priv_a, SecurityGroupIds=[ec2_sg], UserData=user_data)['Instances'][0]['InstanceId']
+            user_data = f"#!/bin/bash\nyum update -y; yum install -y httpd\necho '<h1>Capstone {env.upper()} Server</h1>' > /var/www/html/index.html\nsystemctl start httpd; systemctl enable httpd"
+            instance = ec2.run_instances(ImageId='ami-0c02fb55956c7d316', InstanceType='t3.micro', MinCount=1, MaxCount=1, SubnetId=data['subnets']['private-a'], SecurityGroupIds=[data['security_groups']['ec2']], UserData=user_data)['Instances'][0]
+            instance_id = instance['InstanceId']
             create_tags(instance_id, f"web-{env}", env)
             print(f"✅ Created EC2: {instance_id}")
         else:
-            instance_id = insts[0]['Instances'][0]['InstanceId']
+            instance = insts[0]['Instances'][0]
+            instance_id = instance['InstanceId']
             print(f"⏩ EC2 Instance {instance_id} exists.")
+        
+        data['ec2'] = {
+            'id': instance_id,
+            'private_ip': instance.get('PrivateIpAddress', 'N/A')
+        }
 
         # 8. ALB
         alb_name = f"capstone-{env}-alb"
         try:
-            alb_arn = elbv2.describe_load_balancers(Names=[alb_name])['LoadBalancers'][0]['LoadBalancerArn']
+            alb_info = elbv2.describe_load_balancers(Names=[alb_name])['LoadBalancers'][0]
             print(f"⏩ ALB {alb_name} exists.")
         except elbv2.exceptions.LoadBalancerNotFoundException:
             print("⌛ Creating ALB...")
-            alb_arn = elbv2.create_load_balancer(Name=alb_name, Subnets=[sub_pub_a, sub_pub_b], SecurityGroups=[alb_sg], Scheme='internet-facing', Type='application')['LoadBalancers'][0]['LoadBalancerArn']
-            print(f"✅ Created ALB: {alb_arn}")
+            alb_info = elbv2.create_load_balancer(Name=alb_name, Subnets=[data['subnets']['public-a'], data['subnets']['public-b']], SecurityGroups=[data['security_groups']['alb']], Scheme='internet-facing', Type='application')['LoadBalancers'][0]
+        
+        data['alb'] = {
+            'arn': alb_info['LoadBalancerArn'],
+            'dns': alb_info['DNSName']
+        }
 
-        # Ensure ALB Target Group
+        # ALB Target Group
         tg_name = f"capstone-{env}-ec2-tg"
         try:
-            tg_arn = elbv2.describe_target_groups(Names=[tg_name])['TargetGroups'][0]['TargetGroupArn']
+            tg_info = elbv2.describe_target_groups(Names=[tg_name])['TargetGroups'][0]
             print(f"⏩ Target Group {tg_name} exists.")
         except elbv2.exceptions.TargetGroupNotFoundException:
-            tg_arn = elbv2.create_target_group(Name=tg_name, Protocol='HTTP', Port=80, VpcId=vpc_id, TargetType='instance')['TargetGroups'][0]['TargetGroupArn']
-            print(f"✅ Created TG: {tg_arn}")
+            tg_info = elbv2.create_target_group(Name=tg_name, Protocol='HTTP', Port=80, VpcId=vpc_id, TargetType='instance')['TargetGroups'][0]
+        
+        data['alb']['target_group_arn'] = tg_info['TargetGroupArn']
+        elbv2.register_targets(TargetGroupArn=tg_info['TargetGroupArn'], Targets=[{'Id': instance_id}])
 
-        elbv2.register_targets(TargetGroupArn=tg_arn, Targets=[{'Id': instance_id}])
-
-        # Ensure ALB Listener
-        listeners = elbv2.describe_listeners(LoadBalancerArn=alb_arn)['Listeners']
+        # ALB Listener
+        listeners = elbv2.describe_listeners(LoadBalancerArn=data['alb']['arn'])['Listeners']
         if not listeners:
-            elbv2.create_listener(LoadBalancerArn=alb_arn, Protocol='HTTP', Port=80, DefaultActions=[{'Type': 'forward', 'TargetGroupArn': tg_arn}])
-            print(f"✅ Created ALB Listener")
+            ls = elbv2.create_listener(LoadBalancerArn=data['alb']['arn'], Protocol='HTTP', Port=80, DefaultActions=[{'Type': 'forward', 'TargetGroupArn': tg_info['TargetGroupArn']}])
+            data['alb']['listener_arn'] = ls['Listeners'][0]['ListenerArn']
+        else:
+            data['alb']['listener_arn'] = listeners[0]['ListenerArn']
 
-        # 9. NLB (Wait for ALB ACTIVE first!)
+        # 9. NLB
         nlb_name = f"capstone-{env}-nlb"
         try:
-            nlb_arn = elbv2.describe_load_balancers(Names=[nlb_name])['LoadBalancers'][0]['LoadBalancerArn']
+            nlb_info = elbv2.describe_load_balancers(Names=[nlb_name])['LoadBalancers'][0]
             print(f"⏩ NLB {nlb_name} exists.")
         except elbv2.exceptions.LoadBalancerNotFoundException:
-            wait_for_alb(alb_arn) # BLOCKING WAIT
-            print("⌛ Creating NLB...")
+            wait_for_alb(data['alb']['arn'])
             eip_nlb = ec2.allocate_address(Domain='vpc')['AllocationId']
-            nlb_arn = elbv2.create_load_balancer(Name=nlb_name, SubnetMappings=[{'SubnetId': sub_pub_a, 'AllocationId': eip_nlb}], Type='network', Scheme='internet-facing')['LoadBalancers'][0]['LoadBalancerArn']
-            print(f"✅ Created NLB: {nlb_arn}")
+            data['nlb_eip_id'] = eip_nlb
+            nlb_info = elbv2.create_load_balancer(Name=nlb_name, SubnetMappings=[{'SubnetId': data['subnets']['public-a'], 'AllocationId': eip_nlb}], Type='network', Scheme='internet-facing')['LoadBalancers'][0]
+        
+        data['nlb'] = {
+            'arn': nlb_info['LoadBalancerArn'],
+            'dns': nlb_info['DNSName']
+        }
 
-        # Ensure NLB Target Group
+        # NLB Target Group (Forward to ALB)
         nlb_tg_name = f"capstone-{env}-alb-tg"
         try:
-            tg_alb_arn = elbv2.describe_target_groups(Names=[nlb_tg_name])['TargetGroups'][0]['TargetGroupArn']
+            tg_alb_info = elbv2.describe_target_groups(Names=[nlb_tg_name])['TargetGroups'][0]
             print(f"⏩ Target Group {nlb_tg_name} exists.")
         except elbv2.exceptions.TargetGroupNotFoundException:
-            tg_alb_arn = elbv2.create_target_group(Name=nlb_tg_name, Protocol='TCP', Port=80, VpcId=vpc_id, TargetType='alb')['TargetGroups'][0]['TargetGroupArn']
-            print(f"✅ Created TG: {tg_alb_arn}")
+            tg_alb_info = elbv2.create_target_group(Name=nlb_tg_name, Protocol='TCP', Port=80, VpcId=vpc_id, TargetType='alb')['TargetGroups'][0]
+        
+        data['nlb']['target_group_arn'] = tg_alb_info['TargetGroupArn']
+        elbv2.register_targets(TargetGroupArn=tg_alb_info['TargetGroupArn'], Targets=[{'Id': data['alb']['arn']}])
 
-        elbv2.register_targets(TargetGroupArn=tg_alb_arn, Targets=[{'Id': alb_arn}])
-
-        # Ensure NLB Listener
-        listeners = elbv2.describe_listeners(LoadBalancerArn=nlb_arn)['Listeners']
+        # NLB Listener
+        listeners = elbv2.describe_listeners(LoadBalancerArn=data['nlb']['arn'])['Listeners']
         if not listeners:
-            elbv2.create_listener(LoadBalancerArn=nlb_arn, Protocol='TCP', Port=80, DefaultActions=[{'Type': 'forward', 'TargetGroupArn': tg_alb_arn}])
-            print(f"✅ Created NLB Listener")
+            ls = elbv2.create_listener(LoadBalancerArn=data['nlb']['arn'], Protocol='TCP', Port=80, DefaultActions=[{'Type': 'forward', 'TargetGroupArn': tg_alb_info['TargetGroupArn']}])
+            data['nlb']['listener_arn'] = ls['Listeners'][0]['ListenerArn']
+        else:
+            data['nlb']['listener_arn'] = listeners[0]['ListenerArn']
+
+        discovery_data[env] = data
 
     except ClientError as e:
         print(f"❌ ERROR: {e}"); sys.exit(1)
 
-def create_s3_bucket(name):
+def setup_s3(name):
     full_name_base = f"{name}-{YOUR_NAME}-"
     buckets = s3.list_buckets()['Buckets']
     exists = [b['Name'] for b in buckets if b['Name'].startswith(full_name_base)]
     if exists:
-        print(f"⏩ Bucket {exists[0]} exists."); return
-    full_name = f"{full_name_base}{get_random_string()}"
-    try:
-        s3.create_bucket(Bucket=full_name)
-        s3.put_bucket_encryption(Bucket=full_name, ServerSideEncryptionConfiguration={'Rules': [{'ApplyServerSideEncryptionByDefault': {'SSEAlgorithm': 'AES256'}}]})
-        s3.put_public_access_block(Bucket=full_name, PublicAccessBlockConfiguration={'BlockPublicAcls': True, 'IgnorePublicAcls': True, 'BlockPublicPolicy': True, 'RestrictPublicBuckets': True})
-        s3.put_bucket_versioning(Bucket=full_name, VersioningConfiguration={'Status': 'Enabled'})
-        print(f"✅ Created S3: {full_name}")
-    except ClientError as e: print(f"❌ S3 ERROR: {e}")
+        bucket_name = exists[0]
+        print(f"⏩ Bucket {bucket_name} exists.")
+    else:
+        bucket_name = f"{full_name_base}{get_random_string()}"
+        print(f"⌛ Creating S3 {bucket_name}...")
+        s3.create_bucket(Bucket=bucket_name)
+        s3.put_bucket_encryption(Bucket=bucket_name, ServerSideEncryptionConfiguration={'Rules': [{'ApplyServerSideEncryptionByDefault': {'SSEAlgorithm': 'AES256'}}]})
+        s3.put_public_access_block(Bucket=bucket_name, PublicAccessBlockConfiguration={'BlockPublicAcls': True, 'IgnorePublicAcls': True, 'BlockPublicPolicy': True, 'RestrictPublicBuckets': True})
+        s3.put_bucket_versioning(Bucket=bucket_name, VersioningConfiguration={'Status': 'Enabled'})
+    
+    discovery_data['storage'][name] = bucket_name
 
 if __name__ == "__main__":
     setup_environment("dev", "10.0.0.0/16", "10.0.1.0/24", "10.0.3.0/24", "10.0.2.0/24", "10.0.4.0/24")
     setup_environment("prod", "10.1.0.0/16", "10.1.1.0/24", "10.1.3.0/24", "10.1.2.0/24", "10.1.4.0/24")
+    
     print("\n📦 --- Building Storage ---")
-    create_s3_bucket("capstone-dev")
-    create_s3_bucket("capstone-prod")
-    create_s3_bucket("capstone-tfstate")
-    print("\n🎉 ALL RESOURCES CREATED SUCCESSFULLY!")
+    setup_s3("capstone-dev")
+    setup_s3("capstone-prod")
+    setup_s3("capstone-tfstate")
+
+    # Save to JSON
+    with open('discovery.json', 'w') as f:
+        json.dump(discovery_data, f, indent=4)
+    
+    print("\n" + "="*50)
+    print("🔥 DISCOVERY COMPLETE! metadata saved to discovery.json")
+    print("="*50)
+    print(f"VPC DEV: {discovery_data['dev']['vpc_id']}")
+    print(f"VPC PROD: {discovery_data['prod']['vpc_id']}")
+    print(f"ALB DEV DNS: {discovery_data['dev']['alb']['dns']}")
+    print(f"NLB DEV DNS: {discovery_data['dev']['nlb']['dns']}")
+    print("="*50)

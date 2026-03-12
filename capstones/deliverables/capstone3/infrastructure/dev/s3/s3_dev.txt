@@ -1,0 +1,87 @@
+11:28:27.652 STDOUT [.] terraform: Terraform will perform the following actions:
+11:28:27.653 STDOUT [.] terraform:   # aws_s3_bucket.this["capstone-dev-justo-sa4wv4"] will be imported
+11:28:27.653 STDOUT [.] terraform:     resource "aws_s3_bucket" "this" {
+11:28:27.653 STDOUT [.] terraform:         acceleration_status         = null
+11:28:27.653 STDOUT [.] terraform:         arn                         = "arn:aws:s3:::capstone-dev-justo-sa4wv4"
+11:28:27.653 STDOUT [.] terraform:         bucket                      = "capstone-dev-justo-sa4wv4"
+11:28:27.653 STDOUT [.] terraform:         bucket_domain_name          = "capstone-dev-justo-sa4wv4.s3.amazonaws.com"
+11:28:27.653 STDOUT [.] terraform:         bucket_prefix               = null
+11:28:27.653 STDOUT [.] terraform:         bucket_region               = "us-east-1"
+11:28:27.653 STDOUT [.] terraform:         bucket_regional_domain_name = "capstone-dev-justo-sa4wv4.s3.us-east-1.amazonaws.com"
+11:28:27.653 STDOUT [.] terraform:         force_destroy               = false
+11:28:27.653 STDOUT [.] terraform:         hosted_zone_id              = "Z3AQBSTGFYJSTF"
+11:28:27.653 STDOUT [.] terraform:         id                          = "capstone-dev-justo-sa4wv4"
+11:28:27.653 STDOUT [.] terraform:         object_lock_enabled         = false
+11:28:27.653 STDOUT [.] terraform:         policy                      = null
+11:28:27.653 STDOUT [.] terraform:         region                      = "us-east-1"
+11:28:27.653 STDOUT [.] terraform:         request_payer               = "BucketOwner"
+11:28:27.653 STDOUT [.] terraform:         tags                        = {}
+11:28:27.653 STDOUT [.] terraform:         tags_all                    = {}
+11:28:27.653 STDOUT [.] terraform:         grant {
+11:28:27.653 STDOUT [.] terraform:             id          = "fa0873c8c0821cd7a39f34e468f5c03981e231cb2795dc1bc41134e0f84994aa"
+11:28:27.653 STDOUT [.] terraform:             permissions = [
+11:28:27.653 STDOUT [.] terraform:                 "FULL_CONTROL",
+11:28:27.653 STDOUT [.] terraform:             ]
+11:28:27.653 STDOUT [.] terraform:             type        = "CanonicalUser"
+11:28:27.653 STDOUT [.] terraform:             uri         = null
+11:28:27.653 STDOUT [.] terraform:         }
+11:28:27.653 STDOUT [.] terraform:         server_side_encryption_configuration {
+11:28:27.653 STDOUT [.] terraform:             rule {
+11:28:27.653 STDOUT [.] terraform:                 bucket_key_enabled = false
+11:28:27.653 STDOUT [.] terraform:                 apply_server_side_encryption_by_default {
+11:28:27.653 STDOUT [.] terraform:                     kms_master_key_id = null
+11:28:27.653 STDOUT [.] terraform:                     sse_algorithm     = "AES256"
+11:28:27.653 STDOUT [.] terraform:                 }
+11:28:27.653 STDOUT [.] terraform:             }
+11:28:27.653 STDOUT [.] terraform:         }
+11:28:27.653 STDOUT [.] terraform:         versioning {
+11:28:27.653 STDOUT [.] terraform:             enabled    = true
+11:28:27.653 STDOUT [.] terraform:             mfa_delete = false
+11:28:27.653 STDOUT [.] terraform:         }
+11:28:27.653 STDOUT [.] terraform:     }
+11:28:27.653 STDOUT [.] terraform:   # aws_s3_bucket_public_access_block.this["capstone-dev-justo-sa4wv4"] will be imported
+11:28:27.653 STDOUT [.] terraform:     resource "aws_s3_bucket_public_access_block" "this" {
+11:28:27.653 STDOUT [.] terraform:         block_public_acls       = true
+11:28:27.653 STDOUT [.] terraform:         block_public_policy     = true
+11:28:27.653 STDOUT [.] terraform:         bucket                  = "capstone-dev-justo-sa4wv4"
+11:28:27.654 STDOUT [.] terraform:         id                      = "capstone-dev-justo-sa4wv4"
+11:28:27.654 STDOUT [.] terraform:         ignore_public_acls      = true
+11:28:27.654 STDOUT [.] terraform:         region                  = "us-east-1"
+11:28:27.654 STDOUT [.] terraform:         restrict_public_buckets = true
+11:28:27.654 STDOUT [.] terraform:     }
+11:28:27.654 STDOUT [.] terraform:   # aws_s3_bucket_server_side_encryption_configuration.this["capstone-dev-justo-sa4wv4"] will be imported
+11:28:27.654 STDOUT [.] terraform:     resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
+11:28:27.654 STDOUT [.] terraform:         bucket                = "capstone-dev-justo-sa4wv4"
+11:28:27.654 STDOUT [.] terraform:         expected_bucket_owner = null
+11:28:27.654 STDOUT [.] terraform:         id                    = "capstone-dev-justo-sa4wv4"
+11:28:27.654 STDOUT [.] terraform:         region                = "us-east-1"
+11:28:27.654 STDOUT [.] terraform:         rule {
+11:28:27.654 STDOUT [.] terraform:             blocked_encryption_types = []
+11:28:27.654 STDOUT [.] terraform:             bucket_key_enabled       = false
+11:28:27.654 STDOUT [.] terraform:             apply_server_side_encryption_by_default {
+11:28:27.654 STDOUT [.] terraform:                 kms_master_key_id = null
+11:28:27.654 STDOUT [.] terraform:                 sse_algorithm     = "AES256"
+11:28:27.654 STDOUT [.] terraform:             }
+11:28:27.654 STDOUT [.] terraform:         }
+11:28:27.654 STDOUT [.] terraform:     }
+11:28:27.654 STDOUT [.] terraform:   # aws_s3_bucket_versioning.this["capstone-dev-justo-sa4wv4"] will be imported
+11:28:27.654 STDOUT [.] terraform:     resource "aws_s3_bucket_versioning" "this" {
+11:28:27.654 STDOUT [.] terraform:         bucket                = "capstone-dev-justo-sa4wv4"
+11:28:27.654 STDOUT [.] terraform:         expected_bucket_owner = null
+11:28:27.654 STDOUT [.] terraform:         id                    = "capstone-dev-justo-sa4wv4"
+11:28:27.654 STDOUT [.] terraform:         region                = "us-east-1"
+11:28:27.654 STDOUT [.] terraform:         versioning_configuration {
+11:28:27.654 STDOUT [.] terraform:             mfa_delete = null
+11:28:27.654 STDOUT [.] terraform:             status     = "Enabled"
+11:28:27.654 STDOUT [.] terraform:         }
+11:28:27.654 STDOUT [.] terraform:     }
+11:28:27.654 STDOUT [.] terraform: Plan: 4 to import, 0 to add, 0 to change, 0 to destroy.
+11:28:27.654 STDOUT [.] terraform: Changes to Outputs:
+11:28:27.654 STDOUT [.] terraform:   + bucket_arns  = {
+11:28:27.654 STDOUT [.] terraform:       + capstone-dev-justo-sa4wv4 = "arn:aws:s3:::capstone-dev-justo-sa4wv4"
+11:28:27.654 STDOUT [.] terraform:     }
+11:28:27.654 STDOUT [.] terraform:   + bucket_names = {
+11:28:27.654 STDOUT [.] terraform:       + capstone-dev-justo-sa4wv4 = "capstone-dev-justo-sa4wv4"
+11:28:27.655 STDOUT [.] terraform:     }
+11:28:27.655 STDOUT [.] terraform: You can apply this plan to save these new output values to the Terraform
+11:28:27.655 STDOUT [.] terraform: state, without changing any real infrastructure.

@@ -1,10 +1,3 @@
-# modules/nlb/main.tf
-resource "aws_eip" "this" {
-  for_each = var.subnet_mappings
-  domain   = "vpc"
-  tags     = merge(var.tags, { Name = "${var.name}-eip-${each.key}" })
-}
-
 resource "aws_lb" "this" {
   name               = var.name
   internal           = false
@@ -13,29 +6,40 @@ resource "aws_lb" "this" {
   dynamic "subnet_mapping" {
     for_each = var.subnet_mappings
     content {
-      subnet_id = subnet_mapping.value.subnet_id
-      # Use allocated EIP from local module resource for for_each keys
-      allocation_id = aws_eip.this[subnet_mapping.key].id
+      subnet_id     = subnet_mapping.value.subnet_id
+      allocation_id = subnet_mapping.value.allocation_id
     }
   }
 
-  tags = merge(var.tags, { Name = var.name })
+  tags = var.tags
 }
 
 resource "aws_lb_target_group" "this" {
   for_each = var.target_groups
 
-  name        = "${var.environment}-${each.key}-tg"
-  port        = each.value.port
-  protocol    = each.value.protocol
-  vpc_id      = var.vpc_id
-  target_type = each.value.target_type
+  name                               = each.key
+  port                               = each.value.port
+  protocol                           = each.value.protocol
+  vpc_id                             = var.vpc_id
+  target_type                        = each.value.target_type
+  deregistration_delay               = each.value.deregistration_delay
+  proxy_protocol_v2                  = each.value.proxy_protocol_v2
+  lambda_multi_value_headers_enabled = each.value.lambda_multi_value_headers_enabled
+  slow_start                         = each.value.slow_start
 
   health_check {
-    protocol = "HTTP"
-    port     = "80"
-    path     = "/"
+    enabled             = true
+    protocol            = each.value.health_check_protocol
+    port                = each.value.health_check_port
+    path                = each.value.health_check_path
+    interval            = each.value.health_check_interval
+    timeout             = each.value.health_check_timeout
+    healthy_threshold   = each.value.healthy_threshold
+    unhealthy_threshold = each.value.unhealthy_threshold
+    matcher             = each.value.matcher
   }
+
+  tags = var.tags
 }
 
 resource "aws_lb_target_group_attachment" "this" {
@@ -54,6 +58,26 @@ resource "aws_lb_listener" "this" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.this[each.value.target_group_key].arn
+    target_group_arn = each.value.forward == null ? aws_lb_target_group.this[each.value.target_group_key].arn : null
+
+    dynamic "forward" {
+      for_each = each.value.forward != null ? [each.value.forward] : []
+      content {
+        target_group {
+          arn    = aws_lb_target_group.this[each.value.target_group_key].arn
+          weight = try(forward.value.target_groups[0].weight, 1)
+        }
+
+        dynamic "stickiness" {
+          for_each = forward.value.stickiness != null ? [forward.value.stickiness] : []
+          content {
+            enabled  = stickiness.value.enabled
+            duration = stickiness.value.duration
+          }
+        }
+      }
+    }
   }
+
+  tags = var.tags
 }

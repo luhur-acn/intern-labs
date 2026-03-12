@@ -27,20 +27,20 @@ dependency "security_groups" {
 
 inputs = {
   environment = local.env.environment
-
+  tags = {
+    Name        = "web-prod"
+    Environment = local.env.environment
+    Project     = "capstone"
+  }
+ 
   instances = {
     web = {
       ami_id             = local.env.ami_id
       instance_type      = "t3.micro"
       subnet_id          = dependency.subnets.outputs.subnet_ids["private-subnet-a"]
       security_group_ids = [dependency.security_groups.outputs.security_group_ids["ec2"]]
-      user_data          = <<-EOF
-        #!/bin/bash
-        yum update -y
-        yum install -y httpd
-        echo "<h1>Capstone Prod Server - $(hostname -f)</h1>" > /var/www/html/index.html
-        systemctl start httpd && systemctl enable httpd
-      EOF
+      name               = "web-prod"
+      user_data          = "#!/bin/bash\nyum update -y; yum install -y httpd\necho '<h1>Capstone PROD Server</h1>' > /var/www/html/index.html\nsystemctl start httpd; systemctl enable httpd"
     }
   }
 }

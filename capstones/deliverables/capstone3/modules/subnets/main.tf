@@ -1,4 +1,3 @@
-# modules/subnets/main.tf
 resource "aws_subnet" "this" {
   for_each = var.subnets
 
@@ -7,20 +6,19 @@ resource "aws_subnet" "this" {
   availability_zone       = each.value.availability_zone
   map_public_ip_on_launch = each.value.tier == "public"
 
-  tags = merge(var.tags, {
-    Name = "${var.environment}-${each.key}"
-  })
+  tags = merge(var.tags, { Name = each.value.name })
 }
 
 resource "aws_eip" "nat" {
   domain = "vpc"
-  tags   = merge(var.tags, { Name = "${var.environment}-nat-eip" })
 }
 
 resource "aws_nat_gateway" "this" {
   # Pick the first public subnet ID for the NAT GW
-  subnet_id     = [for k, s in aws_subnet.this : s.id if var.subnets[k].tier == "public"][0]
-  allocation_id = aws_eip.nat.id
+  subnet_id         = [for k, s in aws_subnet.this : s.id if var.subnets[k].tier == "public"][0]
+  allocation_id     = aws_eip.nat.id
+  connectivity_type = "public"
+  availability_mode = "zonal"
 
   tags = merge(var.tags, { Name = "${var.environment}-nat-gw" })
 }

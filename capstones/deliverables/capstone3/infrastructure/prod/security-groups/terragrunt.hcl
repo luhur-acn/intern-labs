@@ -21,13 +21,17 @@ dependency "vpc" {
 inputs = {
   vpc_id      = dependency.vpc.outputs.vpc_id
   environment = local.env.environment
+  project     = "capstone"
+  tags = {
+    Environment = local.env.environment
+    Project     = "capstone"
+  }
 
   security_groups = {
     alb = {
-      description = "ALB Security Group"
+      description = "ALB SG for prod"
       ingress_rules = [
         {
-          description = "Allow HTTP"
           from_port   = 80
           to_port     = 80
           ip_protocol = "tcp"
@@ -36,17 +40,15 @@ inputs = {
       ]
     }
     ec2 = {
-      description = "EC2 Security Group"
+      description = "EC2 SG for prod"
       ingress_rules = [
         {
-          description                  = "Allow HTTP from ALB"
-          from_port                    = 80
-          to_port                      = 80
-          ip_protocol                  = "tcp"
-          referenced_security_group_id = "sg-09c91c5dded17c262"
+          from_port                 = 80
+          to_port                   = 80
+          ip_protocol               = "tcp"
+          source_security_group_key = "alb"
         },
         {
-          description = "Allow SSH"
           from_port   = 22
           to_port     = 22
           ip_protocol = "tcp"

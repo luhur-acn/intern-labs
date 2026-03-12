@@ -1,24 +1,19 @@
 import {
   to = aws_lb.this
-  id = "arn:aws:elasticloadbalancing:us-east-1:381491904060:loadbalancer/net/capstone-dev-nlb/c5d1c2f90e92dd0f"
+  id = "arn:aws:elasticloadbalancing:us-east-1:285233622389:loadbalancer/net/capstone-dev-nlb/c04062ccee47492d"
 }
 
 import {
-  to = aws_eip.this["public-a"]
-  id = "eipalloc-002fe8d433de03296"
-}
-
-import {
-  to = aws_lb_target_group.this["alb"]
-  id = "arn:aws:elasticloadbalancing:us-east-1:381491904060:targetgroup/capstone-dev-alb-tg/137e1d66e6eec000"
+  to = aws_lb_target_group.this["capstone-dev-alb-tg"]
+  id = "arn:aws:elasticloadbalancing:us-east-1:285233622389:targetgroup/capstone-dev-alb-tg/791d11854fdadf15"
 }
 
 import {
   to = aws_lb_listener.this["tcp"]
-  id = "arn:aws:elasticloadbalancing:us-east-1:381491904060:listener/net/capstone-dev-nlb/c5d1c2f90e92dd0f/d7d726401975b663"
+  id = "arn:aws:elasticloadbalancing:us-east-1:285233622389:listener/net/capstone-dev-nlb/c04062ccee47492d/822b4302aeafa54c"
 }
 
 import {
   to = aws_lb_target_group_attachment.this["alb"]
-  id = "arn:aws:elasticloadbalancing:us-east-1:381491904060:targetgroup/capstone-dev-alb-tg/137e1d66e6eec000/arn:aws:elasticloadbalancing:us-east-1:381491904060:loadbalancer/app/capstone-dev-alb/7b8f997e3281df31"
+  id = "arn:aws:elasticloadbalancing:us-east-1:285233622389:targetgroup/capstone-dev-alb-tg/791d11854fdadf15,arn:aws:elasticloadbalancing:us-east-1:285233622389:loadbalancer/app/capstone-dev-alb/bbb3cd3c193237ad"
 }

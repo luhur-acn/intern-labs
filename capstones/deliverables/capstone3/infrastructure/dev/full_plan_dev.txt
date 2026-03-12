@@ -1,0 +1,91 @@
+17:03:51.045 INFO   Unit queue will be processed for plan in this order:
+- Unit s3
+- Unit vpc
+- Unit security-groups
+- Unit subnets
+- Unit ec2
+- Unit alb
+- Unit nlb
+
+[0;90m17:04:00.186[0m [0;37mSTDOUT[0m [0;38;5;66m[s3] [0m[0;36mterraform: [0mAcquiring state lock. This may take a few moments...
+[0;90m17:04:00.478[0m [0;37mSTDOUT[0m [0;38;5;67m[vpc] [0m[0;36mterraform: [0mAcquiring state lock. This may take a few moments...
+[0;90m17:04:49.826[0m [0;37mSTDOUT[0m [0;38;5;66m[s3] [0m[0;36mterraform: [0m[0m[1maws_s3_bucket.this["capstone-dev-justo-3fb6p4"]: Refreshing state... [id=capstone-dev-justo-3fb6p4][0m[0m
+[0;90m17:04:49.850[0m [0;37mSTDOUT[0m [0;38;5;67m[vpc] [0m[0;36mterraform: [0m[0m[1maws_vpc.this: Refreshing state... [id=vpc-0f1979d478dd0ae39][0m[0m
+[0;90m17:04:57.045[0m [0;37mSTDOUT[0m [0;38;5;67m[vpc] [0m[0;36mterraform: [0m[0m[1maws_internet_gateway.this: Refreshing state... [id=igw-03217ca8e1848caa6][0m[0m
+[0;90m17:04:58.001[0m [0;37mSTDOUT[0m [0;38;5;67m[vpc] [0m[0;36mterraform: [0m[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m[0m
+[0;90m17:04:58.002[0m [0;37mSTDOUT[0m [0;38;5;67m[vpc] [0m[0;36mterraform: [0m[0m[0m
+[0;90m17:04:58.002[0m [0;37mSTDOUT[0m [0;38;5;67m[vpc] [0m[0;36mterraform: [0mTerraform has compared your real infrastructure against your configuration
+[0;90m17:04:58.002[0m [0;37mSTDOUT[0m [0;38;5;67m[vpc] [0m[0;36mterraform: [0mand found no differences, so no changes are needed.
+[0;90m17:04:58.232[0m [0;37mSTDOUT[0m [0;38;5;66m[s3] [0m[0;36mterraform: [0m[0m[1maws_s3_bucket_versioning.this["capstone-dev-justo-3fb6p4"]: Refreshing state... [id=capstone-dev-justo-3fb6p4][0m[0m
+[0;90m17:04:58.232[0m [0;37mSTDOUT[0m [0;38;5;66m[s3] [0m[0;36mterraform: [0m[0m[1maws_s3_bucket_server_side_encryption_configuration.this["capstone-dev-justo-3fb6p4"]: Refreshing state... [id=capstone-dev-justo-3fb6p4][0m[0m
+[0;90m17:04:58.232[0m [0;37mSTDOUT[0m [0;38;5;66m[s3] [0m[0;36mterraform: [0m[0m[1maws_s3_bucket_public_access_block.this["capstone-dev-justo-3fb6p4"]: Refreshing state... [id=capstone-dev-justo-3fb6p4][0m[0m
+[0;90m17:04:58.401[0m [0;37mSTDOUT[0m [0;38;5;67m[vpc] [0m[0;36mterraform: [0mReleasing state lock. This may take a few moments...
+[0;90m17:05:00.742[0m [0;37mSTDOUT[0m [0;38;5;66m[s3] [0m[0;36mterraform: [0m[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m[0m
+[0;90m17:05:00.742[0m [0;37mSTDOUT[0m [0;38;5;66m[s3] [0m[0;36mterraform: [0m[0m[0m
+[0;90m17:05:00.742[0m [0;37mSTDOUT[0m [0;38;5;66m[s3] [0m[0;36mterraform: [0mTerraform has compared your real infrastructure against your configuration
+[0;90m17:05:00.742[0m [0;37mSTDOUT[0m [0;38;5;66m[s3] [0m[0;36mterraform: [0mand found no differences, so no changes are needed.
+[0;90m17:05:01.143[0m [0;37mSTDOUT[0m [0;38;5;66m[s3] [0m[0;36mterraform: [0mReleasing state lock. This may take a few moments...
+[0;90m17:05:22.358[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0mAcquiring state lock. This may take a few moments...
+[0;90m17:05:24.689[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0mAcquiring state lock. This may take a few moments...
+[0;90m17:06:21.758[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0m[0m[1maws_security_group.this["alb"]: Refreshing state... [id=sg-04cb5fa763ad46ac0][0m[0m
+[0;90m17:06:21.760[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0m[0m[1maws_security_group.this["ec2"]: Refreshing state... [id=sg-05b97f940e061194a][0m[0m
+[0;90m17:06:22.077[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1maws_subnet.this["public-subnet-a"]: Refreshing state... [id=subnet-00ee23fa766d6da69][0m[0m
+[0;90m17:06:22.077[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1maws_subnet.this["private-subnet-a"]: Refreshing state... [id=subnet-0f9673d0329db9c9b][0m[0m
+[0;90m17:06:22.077[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1maws_eip.nat: Refreshing state... [id=eipalloc-0fd7a494d4319a9fd][0m[0m
+[0;90m17:06:22.077[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1maws_subnet.this["public-subnet-b"]: Refreshing state... [id=subnet-03ded9f94e5df104f][0m[0m
+[0;90m17:06:22.077[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1maws_subnet.this["private-subnet-b"]: Refreshing state... [id=subnet-029d080e67759ba11][0m[0m
+[0;90m17:06:22.077[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1maws_route_table.public: Refreshing state... [id=rtb-02f755e9ff3898bab][0m[0m
+[0;90m17:06:23.527[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0m[0m[1maws_vpc_security_group_egress_rule.all["ec2"]: Refreshing state... [id=sgr-0a7a826be60188573][0m[0m
+[0;90m17:06:23.527[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0m[0m[1maws_vpc_security_group_ingress_rule.this["alb-ingress-0"]: Refreshing state... [id=sgr-01116e25bdc738150][0m[0m
+[0;90m17:06:23.527[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0m[0m[1maws_vpc_security_group_ingress_rule.this["ec2-ingress-1"]: Refreshing state... [id=sgr-0e0932070ee9dff5f][0m[0m
+[0;90m17:06:23.528[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0m[0m[1maws_vpc_security_group_ingress_rule.this["ec2-ingress-0"]: Refreshing state... [id=sgr-032dbcbf509ba093e][0m[0m
+[0;90m17:06:23.528[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0m[0m[1maws_vpc_security_group_egress_rule.all["alb"]: Refreshing state... [id=sgr-059b874cfaa3bedac][0m[0m
+[0;90m17:06:24.633[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1maws_nat_gateway.this: Refreshing state... [id=nat-066ee16fcd8f297b3][0m[0m
+[0;90m17:06:25.218[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1maws_route_table.private: Refreshing state... [id=rtb-032bd666487dc2896][0m[0m
+[0;90m17:06:25.621[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0m[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m[0m
+[0;90m17:06:25.621[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0m[0m[0m
+[0;90m17:06:25.621[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0mTerraform has compared your real infrastructure against your configuration
+[0;90m17:06:25.621[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0mand found no differences, so no changes are needed.
+[0;90m17:06:25.844[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1maws_route_table_association.this["public-subnet-a"]: Refreshing state... [id=rtbassoc-05bc5d40a238ad2a5][0m[0m
+[0;90m17:06:25.844[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1maws_route_table_association.this["private-subnet-a"]: Refreshing state... [id=rtbassoc-0c11be54d5197fcb4][0m[0m
+[0;90m17:06:25.844[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1maws_route_table_association.this["public-subnet-b"]: Refreshing state... [id=rtbassoc-0696bf6a8d3d0a6fc][0m[0m
+[0;90m17:06:25.844[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1maws_route_table_association.this["private-subnet-b"]: Refreshing state... [id=rtbassoc-03696c863b7e072b9][0m[0m
+[0;90m17:06:26.021[0m [0;37mSTDOUT[0m [0;38;5;96m[security-groups] [0m[0;36mterraform: [0mReleasing state lock. This may take a few moments...
+[0;90m17:06:29.907[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m[0m
+[0;90m17:06:29.909[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0m[0m[0m
+[0;90m17:06:29.909[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0mTerraform has compared your real infrastructure against your configuration
+[0;90m17:06:29.909[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0mand found no differences, so no changes are needed.
+[0;90m17:06:30.307[0m [0;37mSTDOUT[0m [0;38;5;95m[subnets] [0m[0;36mterraform: [0mReleasing state lock. This may take a few moments...
+[0;90m17:06:45.693[0m [0;37mSTDOUT[0m [0;38;5;102m[ec2] [0m[0;36mterraform: [0mAcquiring state lock. This may take a few moments...
+[0;90m17:07:12.668[0m [0;37mSTDOUT[0m [0;38;5;102m[ec2] [0m[0;36mterraform: [0m[0m[1maws_instance.this["web"]: Refreshing state... [id=i-0891443606e6ef451][0m[0m
+[0;90m17:07:21.760[0m [0;37mSTDOUT[0m [0;38;5;102m[ec2] [0m[0;36mterraform: [0m[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m[0m
+[0;90m17:07:21.760[0m [0;37mSTDOUT[0m [0;38;5;102m[ec2] [0m[0;36mterraform: [0m[0m[0m
+[0;90m17:07:21.760[0m [0;37mSTDOUT[0m [0;38;5;102m[ec2] [0m[0;36mterraform: [0mTerraform has compared your real infrastructure against your configuration
+[0;90m17:07:21.760[0m [0;37mSTDOUT[0m [0;38;5;102m[ec2] [0m[0;36mterraform: [0mand found no differences, so no changes are needed.
+[0;90m17:07:22.160[0m [0;37mSTDOUT[0m [0;38;5;102m[ec2] [0m[0;36mterraform: [0mReleasing state lock. This may take a few moments...
+[0;90m17:07:44.192[0m [0;37mSTDOUT[0m [0;38;5;103m[alb] [0m[0;36mterraform: [0mAcquiring state lock. This may take a few moments...
+[0;90m17:08:13.337[0m [0;37mSTDOUT[0m [0;38;5;103m[alb] [0m[0;36mterraform: [0m[0m[1maws_lb_target_group.this["ec2"]: Refreshing state... [id=arn:aws:elasticloadbalancing:us-east-1:281762848670:targetgroup/capstone-dev-ec2-tg/47bd6a556943e173][0m[0m
+[0;90m17:08:13.338[0m [0;37mSTDOUT[0m [0;38;5;103m[alb] [0m[0;36mterraform: [0m[0m[1maws_lb.this: Refreshing state... [id=arn:aws:elasticloadbalancing:us-east-1:281762848670:loadbalancer/app/capstone-dev-alb/908e32a9d7f2b32b][0m[0m
+[0;90m17:08:17.084[0m [0;37mSTDOUT[0m [0;38;5;103m[alb] [0m[0;36mterraform: [0m[0m[1maws_lb_target_group_attachment.this["web"]: Refreshing state... [id=arn:aws:elasticloadbalancing:us-east-1:281762848670:targetgroup/capstone-dev-ec2-tg/47bd6a556943e173,i-0891443606e6ef451][0m[0m
+[0;90m17:08:17.963[0m [0;37mSTDOUT[0m [0;38;5;103m[alb] [0m[0;36mterraform: [0m[0m[1maws_lb_listener.this["http"]: Refreshing state... [id=arn:aws:elasticloadbalancing:us-east-1:281762848670:listener/app/capstone-dev-alb/908e32a9d7f2b32b/fd32288066ce18e4][0m[0m
+[0;90m17:08:20.170[0m [0;37mSTDOUT[0m [0;38;5;103m[alb] [0m[0;36mterraform: [0m[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m[0m
+[0;90m17:08:20.175[0m [0;37mSTDOUT[0m [0;38;5;103m[alb] [0m[0;36mterraform: [0m[0m[0m
+[0;90m17:08:20.175[0m [0;37mSTDOUT[0m [0;38;5;103m[alb] [0m[0;36mterraform: [0mTerraform has compared your real infrastructure against your configuration
+[0;90m17:08:20.175[0m [0;37mSTDOUT[0m [0;38;5;103m[alb] [0m[0;36mterraform: [0mand found no differences, so no changes are needed.
+[0;90m17:08:20.571[0m [0;37mSTDOUT[0m [0;38;5;103m[alb] [0m[0;36mterraform: [0mReleasing state lock. This may take a few moments...
+[0;90m17:08:38.402[0m [0;37mSTDOUT[0m [0;38;5;108m[nlb] [0m[0;36mterraform: [0mAcquiring state lock. This may take a few moments...
+[0;90m17:09:06.033[0m [0;37mSTDOUT[0m [0;38;5;108m[nlb] [0m[0;36mterraform: [0m[0m[1maws_eip.this["public-a"]: Refreshing state... [id=eipalloc-03b7bcddcb81090db][0m[0m
+[0;90m17:09:06.033[0m [0;37mSTDOUT[0m [0;38;5;108m[nlb] [0m[0;36mterraform: [0m[0m[1maws_lb_target_group.this["alb"]: Refreshing state... [id=arn:aws:elasticloadbalancing:us-east-1:281762848670:targetgroup/capstone-dev-alb-tg/1ccbefef43b92aac][0m[0m
+[0;90m17:09:08.466[0m [0;37mSTDOUT[0m [0;38;5;108m[nlb] [0m[0;36mterraform: [0m[0m[1maws_lb.this: Refreshing state... [id=arn:aws:elasticloadbalancing:us-east-1:281762848670:loadbalancer/net/capstone-dev-nlb/ad49d4f338df112f][0m[0m
+[0;90m17:09:08.951[0m [0;37mSTDOUT[0m [0;38;5;108m[nlb] [0m[0;36mterraform: [0m[0m[1maws_lb_target_group_attachment.this["alb"]: Refreshing state... [id=arn:aws:elasticloadbalancing:us-east-1:281762848670:targetgroup/capstone-dev-alb-tg/1ccbefef43b92aac,arn:aws:elasticloadbalancing:us-east-1:281762848670:loadbalancer/app/capstone-dev-alb/908e32a9d7f2b32b][0m[0m
+[0;90m17:09:11.847[0m [0;37mSTDOUT[0m [0;38;5;108m[nlb] [0m[0;36mterraform: [0m[0m[1maws_lb_listener.this["tcp"]: Refreshing state... [id=arn:aws:elasticloadbalancing:us-east-1:281762848670:listener/net/capstone-dev-nlb/ad49d4f338df112f/595b727318857757][0m[0m
+[0;90m17:09:14.060[0m [0;37mSTDOUT[0m [0;38;5;108m[nlb] [0m[0;36mterraform: [0m[0m[1m[32mNo changes.[0m[1m Your infrastructure matches the configuration.[0m[0m
+[0;90m17:09:14.060[0m [0;37mSTDOUT[0m [0;38;5;108m[nlb] [0m[0;36mterraform: [0m[0m[0m
+[0;90m17:09:14.060[0m [0;37mSTDOUT[0m [0;38;5;108m[nlb] [0m[0;36mterraform: [0mTerraform has compared your real infrastructure against your configuration
+[0;90m17:09:14.060[0m [0;37mSTDOUT[0m [0;38;5;108m[nlb] [0m[0;36mterraform: [0mand found no differences, so no changes are needed.
+[0;90m17:09:14.461[0m [0;37mSTDOUT[0m [0;38;5;108m[nlb] [0m[0;36mterraform: [0mReleasing state lock. This may take a few moments...
+
+Γ¥»Γ¥» Run Summary  7 units  5m
+   ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+   Succeeded    7
+

@@ -14,4 +14,8 @@ terraform {
 inputs = {
   vpc_cidr    = local.env.vpc_cidr
   environment = local.env.environment
+  tags = {
+    Environment = local.env.environment
+    Project     = "capstone"
+  }
 }

@@ -2,7 +2,7 @@
 resource "aws_s3_bucket" "this" {
   for_each = var.buckets
   bucket   = each.key
-  tags     = merge(var.tags, { Name = each.key })
+  tags     = var.tags
 }
 
 resource "aws_s3_bucket_public_access_block" "this" {

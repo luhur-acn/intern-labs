@@ -1,9 +1,9 @@
 import {
   to = aws_vpc.this
-  id = "vpc-0cf94bd10f9fc9222"
+  id = "vpc-06b12e5673ee9300a"
 }
 
 import {
   to = aws_internet_gateway.this
-  id = "igw-098addb73a8c668b5"
+  id = "igw-091667a5d5dc6f86d"
 }

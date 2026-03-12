@@ -5,4 +5,4 @@ output "instance_ids" {
 output "private_ips" {
   value = { for k, inst in aws_instance.this : k => inst.private_ip }
 }
-output "iam_role_arn" { value = aws_iam_role.this.arn }
+# output "iam_role_arn" { value = aws_iam_role.this.arn }
