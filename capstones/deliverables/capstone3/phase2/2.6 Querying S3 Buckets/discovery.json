@@ -1,0 +1,38 @@
+[
+    {
+        "BucketName": "capstone-dev-justo-65usqy",
+        "Audit": {
+            "Encryption": "AES256",
+            "Versioning": "Enabled",
+            "PublicAccessBlocked": true
+        },
+        "Compliance": {
+            "Overall": true,
+            "Discrepancy": null
+        }
+    },
+    {
+        "BucketName": "capstone-prod-justo-qg13vt",
+        "Audit": {
+            "Encryption": "AES256",
+            "Versioning": "Enabled",
+            "PublicAccessBlocked": true
+        },
+        "Compliance": {
+            "Overall": true,
+            "Discrepancy": null
+        }
+    },
+    {
+        "BucketName": "capstone-tfstate-justo-yi5fsz",
+        "Audit": {
+            "Encryption": "AES256",
+            "Versioning": "Enabled",
+            "PublicAccessBlocked": true
+        },
+        "Compliance": {
+            "Overall": true,
+            "Discrepancy": null
+        }
+    }
+]

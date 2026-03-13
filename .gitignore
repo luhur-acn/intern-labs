@@ -1,5 +1,6 @@
 # Terraform
 .terraform/
+.terragrunt-cache/
 *.tfstate
 *.tfstate.backup
 .terraform.lock.hcl
@@ -10,5 +11,4 @@
 .DS_Store
 Thumbs.db
 
-guides/
 context

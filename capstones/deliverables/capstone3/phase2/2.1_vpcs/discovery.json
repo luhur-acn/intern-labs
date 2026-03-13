@@ -1,0 +1,66 @@
+[
+    {
+        "VpcId": "vpc-0cf94bd10f9fc9222",
+        "VpcName": "prod-vpc",
+        "CidrBlock": "10.1.0.0/16",
+        "IgwId": "igw-098addb73a8c668b5",
+        "RouteTables": [
+            {
+                "RouteTableId": "rtb-009ea3548b0267829",
+                "Name": "prod-private-rt",
+                "Type": "Private",
+                "HasIGW": false,
+                "HasNAT": true,
+                "Discrepancy": null
+            },
+            {
+                "RouteTableId": "rtb-0fc8bbd4d9e3d59a9",
+                "Name": "unnamed",
+                "Type": "Private",
+                "HasIGW": false,
+                "HasNAT": false,
+                "Discrepancy": "Main/Unnamed RT (no NAT route by default)"
+            },
+            {
+                "RouteTableId": "rtb-06876841cb130a61e",
+                "Name": "prod-public-rt",
+                "Type": "Public",
+                "HasIGW": true,
+                "HasNAT": false,
+                "Discrepancy": null
+            }
+        ]
+    },
+    {
+        "VpcId": "vpc-0ddbf980fe31ea317",
+        "VpcName": "dev-vpc",
+        "CidrBlock": "10.0.0.0/16",
+        "IgwId": "igw-0aa4301115a79aa33",
+        "RouteTables": [
+            {
+                "RouteTableId": "rtb-06f3d0cfe6604d6e0",
+                "Name": "dev-private-rt",
+                "Type": "Private",
+                "HasIGW": false,
+                "HasNAT": true,
+                "Discrepancy": null
+            },
+            {
+                "RouteTableId": "rtb-08802f77f0a4590cf",
+                "Name": "unnamed",
+                "Type": "Private",
+                "HasIGW": false,
+                "HasNAT": false,
+                "Discrepancy": "Main/Unnamed RT (no NAT route by default)"
+            },
+            {
+                "RouteTableId": "rtb-0e168d54936861198",
+                "Name": "dev-public-rt",
+                "Type": "Public",
+                "HasIGW": true,
+                "HasNAT": false,
+                "Discrepancy": null
+            }
+        ]
+    }
+]

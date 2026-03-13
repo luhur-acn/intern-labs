@@ -1,0 +1,54 @@
+10:41:48.682 STDOUT terraform: Terraform will perform the following actions:
+10:41:48.683 STDOUT terraform:   # aws_internet_gateway.this will be imported
+10:41:48.683 STDOUT terraform:     resource "aws_internet_gateway" "this" {
+10:41:48.684 STDOUT terraform:         arn      = "arn:aws:ec2:us-east-1:285233622389:internet-gateway/igw-0147b0dffafcce9ae"
+10:41:48.684 STDOUT terraform:         id       = "igw-0147b0dffafcce9ae"
+10:41:48.684 STDOUT terraform:         owner_id = "285233622389"
+10:41:48.685 STDOUT terraform:         region   = "us-east-1"
+10:41:48.685 STDOUT terraform:         tags     = {
+10:41:48.686 STDOUT terraform:             "Name" = "dev-igw"
+10:41:48.687 STDOUT terraform:         }
+10:41:48.687 STDOUT terraform:         tags_all = {
+10:41:48.687 STDOUT terraform:             "Environment" = "dev"
+10:41:48.688 STDOUT terraform:             "Name"        = "dev-igw"
+10:41:48.688 STDOUT terraform:             "Project"     = "capstone"
+10:41:48.688 STDOUT terraform:         }
+10:41:48.689 STDOUT terraform:         vpc_id   = "vpc-03253d68cba733379"
+10:41:48.689 STDOUT terraform:     }
+10:41:48.689 STDOUT terraform:   # aws_vpc.this will be imported
+10:41:48.690 STDOUT terraform:     resource "aws_vpc" "this" {
+10:41:48.690 STDOUT terraform:         arn                                  = "arn:aws:ec2:us-east-1:285233622389:vpc/vpc-03253d68cba733379"
+10:41:48.690 STDOUT terraform:         assign_generated_ipv6_cidr_block     = false
+10:41:48.691 STDOUT terraform:         cidr_block                           = "10.0.0.0/16"
+10:41:48.691 STDOUT terraform:         default_network_acl_id               = "acl-04a3c4acbc67d7c80"
+10:41:48.691 STDOUT terraform:         default_route_table_id               = "rtb-02518383002713ce1"
+10:41:48.692 STDOUT terraform:         default_security_group_id            = "sg-01f0e18dd4632dabe"
+10:41:48.692 STDOUT terraform:         dhcp_options_id                      = "dopt-0ee1bbc679ca0f385"
+10:41:48.692 STDOUT terraform:         enable_dns_hostnames                 = true
+10:41:48.692 STDOUT terraform:         enable_dns_support                   = true
+10:41:48.693 STDOUT terraform:         enable_network_address_usage_metrics = false
+10:41:48.693 STDOUT terraform:         id                                   = "vpc-03253d68cba733379"
+10:41:48.693 STDOUT terraform:         instance_tenancy                     = "default"
+10:41:48.693 STDOUT terraform:         ipv6_association_id                  = null
+10:41:48.694 STDOUT terraform:         ipv6_cidr_block                      = null
+10:41:48.694 STDOUT terraform:         ipv6_cidr_block_network_border_group = null
+10:41:48.694 STDOUT terraform:         ipv6_ipam_pool_id                    = null
+10:41:48.694 STDOUT terraform:         ipv6_netmask_length                  = 0
+10:41:48.695 STDOUT terraform:         main_route_table_id                  = "rtb-02518383002713ce1"
+10:41:48.695 STDOUT terraform:         owner_id                             = "285233622389"
+10:41:48.695 STDOUT terraform:         region                               = "us-east-1"
+10:41:48.695 STDOUT terraform:         tags                                 = {
+10:41:48.696 STDOUT terraform:             "Name" = "dev-vpc"
+10:41:48.696 STDOUT terraform:         }
+10:41:48.696 STDOUT terraform:         tags_all                             = {
+10:41:48.696 STDOUT terraform:             "Environment" = "dev"
+10:41:48.696 STDOUT terraform:             "Name"        = "dev-vpc"
+10:41:48.697 STDOUT terraform:             "Project"     = "capstone"
+10:41:48.697 STDOUT terraform:         }
+10:41:48.697 STDOUT terraform:     }
+10:41:48.697 STDOUT terraform: Plan: 2 to import, 0 to add, 0 to change, 0 to destroy.
+10:41:48.697 STDOUT terraform: Changes to Outputs:
+10:41:48.698 STDOUT terraform:   + igw_id = "igw-0147b0dffafcce9ae"
+10:41:48.698 STDOUT terraform:   + vpc_id = "vpc-03253d68cba733379"
+10:41:48.698 STDOUT terraform: You can apply this plan to save these new output values to the Terraform
+10:41:48.698 STDOUT terraform: state, without changing any real infrastructure.

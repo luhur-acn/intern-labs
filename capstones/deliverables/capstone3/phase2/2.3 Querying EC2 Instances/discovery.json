@@ -1,0 +1,28 @@
+[
+    {
+        "InstanceId": "i-0fb7d369ebf2ab629",
+        "Name": "web-dev",
+        "PrivateIp": "10.0.2.203",
+        "SecurityGroups": [
+            "sg-009e9c8553da9e963"
+        ],
+        "Validation": {
+            "Port80_Referencing_SG": true,
+            "Source_SG_ID": "sg-017d13c99a80bd702",
+            "Discrepancy": null
+        }
+    },
+    {
+        "InstanceId": "i-06772fc880feda285",
+        "Name": "web-prod",
+        "PrivateIp": "10.1.2.225",
+        "SecurityGroups": [
+            "sg-0adfc66837d2f7e9b"
+        ],
+        "Validation": {
+            "Port80_Referencing_SG": true,
+            "Source_SG_ID": "sg-09c91c5dded17c262",
+            "Discrepancy": null
+        }
+    }
+]

@@ -1,0 +1,66 @@
+[
+    {
+        "SubnetId": "subnet-0e593f7eaa2d2016c",
+        "Cidr": "10.1.2.0/24",
+        "AZ": "us-east-1a",
+        "Name": "prod-private-subnet-a",
+        "AutoPublicIP": false,
+        "Discrepancy": null
+    },
+    {
+        "SubnetId": "subnet-00bddfb99c41f5662",
+        "Cidr": "10.1.3.0/24",
+        "AZ": "us-east-1b",
+        "Name": "prod-public-subnet-b",
+        "AutoPublicIP": true,
+        "Discrepancy": null
+    },
+    {
+        "SubnetId": "subnet-005c6553c7856be3a",
+        "Cidr": "10.0.4.0/24",
+        "AZ": "us-east-1b",
+        "Name": "dev-private-subnet-b",
+        "AutoPublicIP": false,
+        "Discrepancy": null
+    },
+    {
+        "SubnetId": "subnet-0ffcaca8215a0dbb9",
+        "Cidr": "10.0.2.0/24",
+        "AZ": "us-east-1a",
+        "Name": "dev-private-subnet-a",
+        "AutoPublicIP": false,
+        "Discrepancy": null
+    },
+    {
+        "SubnetId": "subnet-031554c80d082ad50",
+        "Cidr": "10.0.1.0/24",
+        "AZ": "us-east-1a",
+        "Name": "dev-public-subnet-a",
+        "AutoPublicIP": true,
+        "Discrepancy": null
+    },
+    {
+        "SubnetId": "subnet-06704318baaea8db9",
+        "Cidr": "10.1.4.0/24",
+        "AZ": "us-east-1b",
+        "Name": "prod-private-subnet-b",
+        "AutoPublicIP": false,
+        "Discrepancy": null
+    },
+    {
+        "SubnetId": "subnet-0900246b045e1f9b8",
+        "Cidr": "10.1.1.0/24",
+        "AZ": "us-east-1a",
+        "Name": "prod-public-subnet-a",
+        "AutoPublicIP": true,
+        "Discrepancy": null
+    },
+    {
+        "SubnetId": "subnet-09774a5e6cd4fc675",
+        "Cidr": "10.0.3.0/24",
+        "AZ": "us-east-1b",
+        "Name": "dev-public-subnet-b",
+        "AutoPublicIP": true,
+        "Discrepancy": null
+    }
+]

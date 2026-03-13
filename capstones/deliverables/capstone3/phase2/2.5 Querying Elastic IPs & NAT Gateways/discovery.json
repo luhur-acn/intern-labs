@@ -1,0 +1,42 @@
+[
+    {
+        "NatGatewayId": "nat-0e225dce442b44cd1",
+        "State": "available",
+        "SubnetId": "subnet-0900246b045e1f9b8",
+        "SubnetName": "prod-public-subnet-a",
+        "ElasticIPDetails": [
+            {
+                "PublicIp": "44.206.52.161",
+                "AllocationId": "eipalloc-065bd692da345ac87",
+                "AssociationId": "eipassoc-0d80870bbed7002f1",
+                "NetworkInterfaceId": "eni-012e4c9b6eaa91893",
+                "IsCorrectlyAssociated": true
+            }
+        ],
+        "Validation": {
+            "InPublicSubnet": true,
+            "EIPAssociatedToNATInterface": true,
+            "Discrepancy": null
+        }
+    },
+    {
+        "NatGatewayId": "nat-00e0f3582f9b38ab1",
+        "State": "available",
+        "SubnetId": "subnet-031554c80d082ad50",
+        "SubnetName": "dev-public-subnet-a",
+        "ElasticIPDetails": [
+            {
+                "PublicIp": "52.45.187.147",
+                "AllocationId": "eipalloc-0e3cb66fd7fc0342f",
+                "AssociationId": "eipassoc-08c26bab3c264784d",
+                "NetworkInterfaceId": "eni-05009ad16e8c38636",
+                "IsCorrectlyAssociated": true
+            }
+        ],
+        "Validation": {
+            "InPublicSubnet": true,
+            "EIPAssociatedToNATInterface": true,
+            "Discrepancy": null
+        }
+    }
+]

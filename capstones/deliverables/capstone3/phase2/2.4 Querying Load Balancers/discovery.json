@@ -1,0 +1,106 @@
+[
+    {
+        "LoadBalancerName": "capstone-prod-nlb",
+        "DNSName": "capstone-prod-nlb-461346a62d6d76ef.elb.us-east-1.amazonaws.com",
+        "Type": "network",
+        "Listeners": [
+            {
+                "ListenerArn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:listener/net/capstone-prod-nlb/461346a62d6d76ef/244941b977b2ebbd",
+                "Port": 80,
+                "Protocol": "TCP",
+                "TargetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:targetgroup/capstone-prod-alb-tg/4762d56104a3b519",
+                "Targets": [
+                    {
+                        "TargetId": "arn:aws:elasticloadbalancing:us-east-1:381491904060:loadbalancer/app/capstone-prod-alb/299b00532535abe9",
+                        "Port": 80,
+                        "HealthState": "healthy",
+                        "Reason": "Healthy"
+                    }
+                ],
+                "Healthy": true
+            }
+        ],
+        "Validation": {
+            "AllTargetsHealthy": true,
+            "Discrepancy": null
+        }
+    },
+    {
+        "LoadBalancerName": "capstone-dev-nlb",
+        "DNSName": "capstone-dev-nlb-c5d1c2f90e92dd0f.elb.us-east-1.amazonaws.com",
+        "Type": "network",
+        "Listeners": [
+            {
+                "ListenerArn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:listener/net/capstone-dev-nlb/c5d1c2f90e92dd0f/d7d726401975b663",
+                "Port": 80,
+                "Protocol": "TCP",
+                "TargetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:targetgroup/capstone-dev-alb-tg/137e1d66e6eec000",
+                "Targets": [
+                    {
+                        "TargetId": "arn:aws:elasticloadbalancing:us-east-1:381491904060:loadbalancer/app/capstone-dev-alb/7b8f997e3281df31",
+                        "Port": 80,
+                        "HealthState": "healthy",
+                        "Reason": "Healthy"
+                    }
+                ],
+                "Healthy": true
+            }
+        ],
+        "Validation": {
+            "AllTargetsHealthy": true,
+            "Discrepancy": null
+        }
+    },
+    {
+        "LoadBalancerName": "capstone-dev-alb",
+        "DNSName": "capstone-dev-alb-1224047828.us-east-1.elb.amazonaws.com",
+        "Type": "application",
+        "Listeners": [
+            {
+                "ListenerArn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:listener/app/capstone-dev-alb/7b8f997e3281df31/ac5c066dfc7b5211",
+                "Port": 80,
+                "Protocol": "HTTP",
+                "TargetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:targetgroup/capstone-dev-ec2-tg/501bc5f4abad4abd",
+                "Targets": [
+                    {
+                        "TargetId": "i-0fb7d369ebf2ab629",
+                        "Port": 80,
+                        "HealthState": "healthy",
+                        "Reason": "Healthy"
+                    }
+                ],
+                "Healthy": true
+            }
+        ],
+        "Validation": {
+            "AllTargetsHealthy": true,
+            "Discrepancy": null
+        }
+    },
+    {
+        "LoadBalancerName": "capstone-prod-alb",
+        "DNSName": "capstone-prod-alb-830424362.us-east-1.elb.amazonaws.com",
+        "Type": "application",
+        "Listeners": [
+            {
+                "ListenerArn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:listener/app/capstone-prod-alb/299b00532535abe9/e4c29992de973c44",
+                "Port": 80,
+                "Protocol": "HTTP",
+                "TargetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:381491904060:targetgroup/capstone-prod-ec2-tg/7ecdfd7d45c73f85",
+                "Targets": [
+                    {
+                        "TargetId": "i-06772fc880feda285",
+                        "Port": 80,
+                        "HealthState": "healthy",
+                        "Reason": "Healthy"
+                    }
+                ],
+                "Healthy": true
+            }
+        ],
+        "Validation": {
+            "AllTargetsHealthy": true,
+            "Discrepancy": null
+        }
+    }
+]
